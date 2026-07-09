@@ -1,0 +1,72 @@
+# Python Virtual Environment
+venv/
+backend/venv/
+
+# Environment Variables
+backend/.env
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Upload Folder
+backend/app/uploads/
+
+# VS Code
+.vscode/
+
+# React
+frontend/node_modules/
+
+# OS Files
+.DS_Store
+Thumbs.db
+node_modules
+# Dataset extraction files
+EasyOCR.py
+data_extraction.py
+Resumes Datasets/
+data/
+complete_resume_dataset.csv
+final_complete_resume_dataset.csv
+
+# Dataset extraction React project
+node_modules/
+src/
+package.json
+package-lock.json
+
+# Dataset extraction scripts
+EasyOCR.py
+data_extraction.py
+
+# Dataset folders
+Resumes Datasets/
+data/
+
+# Large datasets
+complete_resume_dataset.csv
+final_complete_resume_dataset.csv
+
+# Python
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+backend/.env
+
+# Upload folder
+backend/app/uploads/
+
+# Frontend dependencies
+frontend/node_modules/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
