@@ -1,0 +1,437 @@
+/* ==========================================
+   Upload Resume Section
+========================================== */
+
+.upload-section{
+
+    width:100%;
+
+    max-width:1400px;
+
+    margin:0 auto;
+
+    padding:40px 20px 80px;
+
+}
+
+/* ==========================================
+   Before Analysis Layout
+========================================== */
+
+.upload-layout{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    min-height:75vh;
+
+    animation:fadeCenter .5s ease;
+
+}
+
+/* ==========================================
+   After Analysis Layout
+========================================== */
+.analysis-layout{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:30px;
+
+    align-items:flex-start;
+
+    animation:slideLayout .5s ease;
+
+}
+
+/* ==========================================
+   Upload Panel
+========================================== */
+
+.upload-panel{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+/* ==========================================
+   Upload Card
+========================================== */
+
+.upload-box{
+    max-width: none;
+    max-width:450px;
+    min-height:75vh;
+    width:100%;
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:#ffffff;
+
+    border:2px dashed #3b82f6;
+
+    border-radius:20px;
+
+    padding:40px 30px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.upload-box:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,0.12);
+
+    border-color:#2563eb;
+
+}
+
+.upload-box h2{
+
+    color:#1e3a8a;
+
+    margin-bottom:15px;
+
+    font-size:28px;
+
+}
+
+.upload-box p{
+
+    color:#6b7280;
+
+    margin:10px 0;
+
+    font-size:16px;
+
+}
+
+.upload-box small{
+
+    display:block;
+
+    margin-top:20px;
+
+    color:#9ca3af;
+
+}
+
+/* ==========================================
+   Browse Button
+========================================== */
+
+.browse-btn{
+
+    width:100%;
+
+    margin-top:20px;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:#2563eb;
+
+    color:#ffffff;
+
+    font-size:17px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:0.3s;
+
+}
+
+.browse-btn:hover{
+
+    background:#1d4ed8;
+
+}
+
+/* ==========================================
+   Selected File
+========================================== */
+
+.filename{
+
+    margin:18px 0;
+
+    text-align:center;
+
+    font-weight:600;
+
+    color:#475569;
+
+}
+
+/* ==========================================
+   Analyze Button
+========================================== */
+
+.analyze-btn{
+
+    width:100%;
+
+    padding:15px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:#10b981;
+
+    color:white;
+
+    font-size:18px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:0.3s;
+
+}
+
+.analyze-btn:hover{
+
+    background:#059669;
+
+}
+
+/* Hide File Input */
+
+.upload-box input{
+
+    display:none;
+
+}
+
+/* ==========================================
+   Upload Icon
+========================================== */
+
+.upload-icon{
+
+    width:80px;
+
+    height:80px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+    font-size:40px;
+
+    border-radius:50%;
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+}
+
+/* ==========================================
+   Upload Text
+========================================== */
+
+.upload-text{
+
+    margin-top:10px;
+
+    color:#475569;
+
+    font-size:18px;
+
+    font-weight:500;
+
+}
+
+.upload-subtext{
+
+    margin:18px 0;
+
+    color:#94a3b8;
+
+    font-size:15px;
+
+}
+
+
+
+
+.recommendation-panel-wrapper{
+
+    width:100%;
+
+}
+
+
+
+.analysis-layout{
+
+    animation:slideLayout .5s ease;
+
+}
+
+@keyframes fadeCenter{
+
+    from{
+
+        opacity:0;
+
+        transform:scale(.95);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:scale(1);
+
+    }
+
+}
+
+@keyframes slideLayout{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(25px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+
+/* ==========================================
+   Tablet
+========================================== */
+
+@media (max-width:1024px){
+
+    .analysis-layout{
+
+        grid-template-columns:1fr;
+
+        gap:30px;
+
+    }
+
+    .upload-panel{
+
+        display:flex;
+
+        justify-content:center;
+
+    }
+
+    .recommendation-panel-wrapper{
+
+        width:100%;
+
+    }
+
+}
+
+/* ==========================================
+   Mobile
+========================================== */
+
+@media (max-width:768px){
+
+    .upload-section{
+
+        padding:20px 15px 40px;
+
+    }
+
+    .upload-box{
+
+        padding:30px 20px;
+
+    }
+
+    .upload-box h2{
+
+        font-size:32px;
+
+        text-align:center;
+
+    }
+
+    .upload-box p{
+
+        text-align:center;
+
+    }
+
+    .browse-btn{
+
+        width:100%;
+
+    }
+
+    .analyze-btn{
+
+        width:100%;
+
+    }
+
+}
+
+.error-banner{
+
+    margin:20px 0;
+
+    padding:14px 18px;
+
+    background:#fee2e2;
+
+    color:#b91c1c;
+
+    border:1px solid #fecaca;
+
+    border-radius:10px;
+
+    text-align:center;
+
+    font-weight:500;
+
+}

@@ -1,0 +1,75 @@
+.live-jobs-section{
+
+    margin-top:50px;
+
+}
+
+.live-jobs-section h2{
+
+    text-align:center;
+
+    margin-bottom:30px;
+
+}
+
+.jobs-container{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+
+    gap:20px;
+
+}
+
+.job-card{
+
+    background:white;
+
+    border-radius:12px;
+
+    padding:20px;
+
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+
+}
+
+.job-card h3{
+
+    color:#2563eb;
+
+    margin-bottom:15px;
+
+}
+
+.job-card p{
+
+    margin:8px 0;
+
+}
+
+.apply-btn{
+
+    display:inline-block;
+
+    margin-top:15px;
+
+    padding:10px 18px;
+
+    background:#2563eb;
+
+    color:white;
+
+    text-decoration:none;
+
+    border-radius:8px;
+
+    transition:0.3s;
+
+}
+
+.apply-btn:hover{
+
+    background:#1d4ed8;
+
+}

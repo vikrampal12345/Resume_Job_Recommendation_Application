@@ -1,0 +1,105 @@
+.hero{
+
+    text-align:center;
+
+    margin-top:70px;
+
+    padding:20px;
+
+}
+
+.hero h1{
+
+    font-size:52px;
+
+    font-weight:700;
+
+    color:#1f2937;
+
+    line-height:1.2;
+
+}
+
+.hero p{
+
+    width:750px;
+
+    margin:25px auto;
+
+    font-size:20px;
+
+    color:#6b7280;
+
+    line-height:1.8;
+
+}
+
+/* ==========================================
+   Tablet
+========================================== */
+
+@media (max-width:1024px){
+
+    .hero{
+
+        margin-top:50px;
+
+        padding:20px;
+
+    }
+
+    .hero h1{
+
+        font-size:42px;
+
+    }
+
+    .hero p{
+
+        width:100%;
+
+        max-width:650px;
+
+        font-size:18px;
+
+    }
+
+}
+
+/* ==========================================
+   Mobile
+========================================== */
+
+@media (max-width:768px){
+
+    .hero{
+
+        margin-top:30px;
+
+        padding:15px;
+
+    }
+
+    .hero h1{
+
+        font-size:36px;
+
+        line-height:1.25;
+
+    }
+
+    .hero p{
+
+        width:100%;
+
+        max-width:100%;
+
+        font-size:16px;
+
+        line-height:1.6;
+
+        margin:18px auto;
+
+    }
+
+}

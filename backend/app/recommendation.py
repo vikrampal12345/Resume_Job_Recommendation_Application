@@ -5,41 +5,41 @@ import faiss
 from collections import defaultdict
 import os
 import re
+from app.job_formatter import format_job_name
 
+# def format_job_name(job):
 
-def format_job_name(job):
+#     JOB_NAME_MAP = {
+#         "backenddeveloper": "Backend Developer",
+#         "frontenddeveloper": "Frontend Developer",
+#         "fullstackdeveloper": "Full Stack Developer",
+#         "softwareengineer": "Software Engineer",
+#         "softwaredeveloper": "Software Developer",
+#         "machinelearningengineer": "Machine Learning Engineer",
+#         "dataengineer": "Data Engineer",
+#         "datascientist": "Data Scientist",
+#         "dataanalyst": "Data Analyst",
+#         "businessanalyst": "Business Analyst",
+#         "financialanalyst": "Financial Analyst",
+#         "financialcontroller": "Financial Controller",
+#         "projectmanager": "Project Manager",
+#         "operationsmanager": "Operations Manager",
+#         "accountant": "Accountant",
+#         "accountingmanager": "Accounting Manager",
+#         "databaseadministrator": "Database Administrator",
+#         "systemsadministrator": "Systems Administrator",
+#         "devopsengineer": "DevOps Engineer",
+#         "cloudengineer": "Cloud Engineer",
+#         "pythondeveloper": "Python Developer",
+#         "javadeveloper": "Java Developer",
+#         "webdeveloper": "Web Developer",
+#         "webdesigner": "Web Designer",
+#         "graphicdesigner": "Graphic Designer",
+#         "humanresourcesmanager": "Human Resources Manager",
+#         "customerservicerepresentative": "Customer Service Representative"
+#     }
 
-    JOB_NAME_MAP = {
-        "backenddeveloper": "Backend Developer",
-        "frontenddeveloper": "Frontend Developer",
-        "fullstackdeveloper": "Full Stack Developer",
-        "softwareengineer": "Software Engineer",
-        "softwaredeveloper": "Software Developer",
-        "machinelearningengineer": "Machine Learning Engineer",
-        "dataengineer": "Data Engineer",
-        "datascientist": "Data Scientist",
-        "dataanalyst": "Data Analyst",
-        "businessanalyst": "Business Analyst",
-        "financialanalyst": "Financial Analyst",
-        "financialcontroller": "Financial Controller",
-        "projectmanager": "Project Manager",
-        "operationsmanager": "Operations Manager",
-        "accountant": "Accountant",
-        "accountingmanager": "Accounting Manager",
-        "databaseadministrator": "Database Administrator",
-        "systemsadministrator": "Systems Administrator",
-        "devopsengineer": "DevOps Engineer",
-        "cloudengineer": "Cloud Engineer",
-        "pythondeveloper": "Python Developer",
-        "javadeveloper": "Java Developer",
-        "webdeveloper": "Web Developer",
-        "webdesigner": "Web Designer",
-        "graphicdesigner": "Graphic Designer",
-        "humanresourcesmanager": "Human Resources Manager",
-        "customerservicerepresentative": "Customer Service Representative"
-    }
-
-    return JOB_NAME_MAP.get(job.lower(), job.title())
+#     return JOB_NAME_MAP.get(job.lower(), job.title())
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

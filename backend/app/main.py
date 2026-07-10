@@ -5,6 +5,11 @@ import shutil
 import os
 import uuid
 import traceback
+from fastapi.middleware.cors import CORSMiddleware
+from app.job_api import search_jobs
+from pydantic import BaseModel
+from app.job_formatter import format_job_name
+
 # ===========================================
 # FastAPI App
 # ===========================================
@@ -13,7 +18,19 @@ app = FastAPI(
     title="Resume Recommendation API",
     version="1.0.0"
 )
+app.add_middleware(
+    CORSMiddleware,
 
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+
+    allow_credentials=True,
+
+    allow_methods=["*"],
+
+    allow_headers=["*"],
+)
 # ===========================================
 # Load Predictor Once
 # ===========================================
@@ -93,3 +110,37 @@ async def predict(file: UploadFile = File(...)):
 
         if os.path.exists(file_path):
             os.remove(file_path)
+
+class LiveJobsRequest(BaseModel):
+
+    recommendations: list
+@app.post("/live-jobs")
+async def live_jobs(request: LiveJobsRequest):
+    print("LIVE JOBS ENDPOINT CALLED")
+    print(request.recommendations)
+    try:
+        all_jobs = []
+
+        for recommendation in request.recommendations[:3]:
+
+            role = format_job_name(recommendation["job_role"])
+
+            print("Searching: ", role)
+
+            jobs = search_jobs(role)
+
+            all_jobs.extend(jobs)
+
+        return {
+            "success": True,
+            "jobs": all_jobs
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return {
+            "success": False,
+            "error": str(e)
+        }
