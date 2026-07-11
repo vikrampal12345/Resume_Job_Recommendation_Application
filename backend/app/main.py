@@ -22,7 +22,8 @@ app.add_middleware(
     CORSMiddleware,
 
     allow_origins=[
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "https://resume-job-recommendation-applicati.vercel.app"
     ],
 
     allow_credentials=True,
