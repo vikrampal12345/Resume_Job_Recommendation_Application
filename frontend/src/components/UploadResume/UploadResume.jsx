@@ -1,5 +1,5 @@
 import "./UploadResume.css";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
     uploadResume,
     fetchLiveJobs
@@ -13,11 +13,39 @@ function UploadResume() {
 
     const [selectedFile, setSelectedFile] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
+    const [loadingDots, setLoadingDots] = useState("");
     const [recommendations, setRecommendations] = useState([]);
     const [liveJobs, setLiveJobs] = useState([]);
     const [loadingJobs, setLoadingJobs] = useState(false);
     const fileInputRef = useRef(null);
+    const recommendationRef = useRef(null);
     const [errorMessage, setErrorMessage] = useState("");
+
+   useEffect(() => {
+
+        if (!loading) {
+            setLoadingDots("");
+            return;
+        }
+
+        const interval = setInterval(() => {
+
+            setLoadingDots((prev) => {
+
+                if (prev === "...") {
+                    return "";
+                }
+
+                return prev + ".";
+
+            });
+
+        }, 400);
+
+        return () => clearInterval(interval);
+
+    }, [loading]); 
 
    function handleFileChange(event) {
 
@@ -68,11 +96,26 @@ function UploadResume() {
         try {
 
             setLoading(true);
+            setLoadingMessage("AI is analyzing your resume...");
             setErrorMessage("");
 
             const prediction = await uploadResume(selectedFile);
-
+            setLoadingMessage("Finding live jobs...");
             setRecommendations(prediction.recommendations);
+
+            // Auto-scroll only on mobile
+            if (window.innerWidth <= 768) {
+
+                setTimeout(() => {
+
+                    recommendationRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+
+                }, 300);
+
+            }
 
             // Start loading live jobs
             setLoadingJobs(true);
@@ -114,6 +157,7 @@ function UploadResume() {
         finally {
 
             setLoading(false);
+            setLoadingMessage("");
 
         }
 
@@ -186,14 +230,10 @@ function UploadResume() {
                         <button
                             className="analyze-btn"
                             onClick={analyzeResume}
+                            disabled={loading}
                         >
-
-                            {loading
-                                ? "Analyzing..."
-                                : "Analyze Resume"}
-
+                            {loading ? loadingMessage + loadingDots : "Analyze Resume"}
                         </button>
-
                         {
                             errorMessage && (
 
@@ -212,10 +252,12 @@ function UploadResume() {
                 {/* Recommendation Panel */}
 
                 {
-
                     recommendations.length > 0 && (
 
-                        <div className="recommendation-panel-wrapper">
+                        <div
+                            ref={recommendationRef}
+                            className="recommendation-panel-wrapper"
+                        >
 
                             <RecommendationPanel
                                 recommendations={recommendations}
