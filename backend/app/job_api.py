@@ -10,7 +10,7 @@ env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
 
 API_KEY = os.getenv("RAPIDAPI_KEY")
-print("API KEY:", API_KEY)
+# print("API KEY:", API_KEY)
 
 URL = "https://jsearch.p.rapidapi.com/search-v2"
 

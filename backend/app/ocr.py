@@ -1,6 +1,6 @@
 import os
 import fitz
-import easyocr
+# import easyocr
 from docx import Document
 from pymupdf import FileDataError
 
@@ -9,7 +9,7 @@ from pymupdf import FileDataError
 # ===========================================
 
 # reader = easyocr.Reader(['en'], gpu=False)
-reader = None
+# reader = None
 
 # ===========================================
 # PDF Extraction
@@ -79,32 +79,32 @@ def extract_docx_text(file_path):
 # Image OCR
 # ===========================================
 
-def extract_image_text(file_path):
+# def extract_image_text(file_path):
     
-    global reader
+#     global reader
 
-    if reader is None:
+#     if reader is None:
 
-        print("Loading EasyOCR...")
+#         print("Loading EasyOCR...")
 
-        reader = easyocr.Reader(['en'], gpu=False)
-        
-    try:
+#         reader = easyocr.Reader(['en'], gpu=False)
 
-        result = reader.readtext(file_path)
+#     try:
 
-        text = ""
+#         result = reader.readtext(file_path)
 
-        for item in result:
-            text += item[1] + " "
+#         text = ""
 
-        if not text.strip():
-            raise ValueError("No text detected in image.")
+#         for item in result:
+#             text += item[1] + " "
 
-        return text
+#         if not text.strip():
+#             raise ValueError("No text detected in image.")
 
-    except Exception as e:
-        raise ValueError(f"Unable to read image: {e}")
+#         return text
+
+#     except Exception as e:
+#         raise ValueError(f"Unable to read image: {e}")
 
 
 # ===========================================
@@ -136,7 +136,7 @@ def extract_resume_text(file_path):
 
     else:
         raise ValueError(
-            "Unsupported file format. Supported formats: PDF, DOCX, PNG, JPG, JPEG."
+            "Unsupported file format. Supported formats: PDF, DOCX."
         )
 
 
