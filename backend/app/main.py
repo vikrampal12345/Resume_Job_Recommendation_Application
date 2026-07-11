@@ -145,3 +145,13 @@ async def live_jobs(request: LiveJobsRequest):
             "success": False,
             "error": str(e)
         }
+
+
+@app.get("/debug-origin")
+async def debug_origin():
+    return {
+        "allowed_origins": [
+            "http://localhost:5173",
+            "https://resume-job-recommendation-applicati.vercel.app"
+        ]
+    }
