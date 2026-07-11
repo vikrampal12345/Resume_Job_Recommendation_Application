@@ -7,39 +7,7 @@ import os
 import re
 from app.job_formatter import format_job_name
 
-# def format_job_name(job):
 
-#     JOB_NAME_MAP = {
-#         "backenddeveloper": "Backend Developer",
-#         "frontenddeveloper": "Frontend Developer",
-#         "fullstackdeveloper": "Full Stack Developer",
-#         "softwareengineer": "Software Engineer",
-#         "softwaredeveloper": "Software Developer",
-#         "machinelearningengineer": "Machine Learning Engineer",
-#         "dataengineer": "Data Engineer",
-#         "datascientist": "Data Scientist",
-#         "dataanalyst": "Data Analyst",
-#         "businessanalyst": "Business Analyst",
-#         "financialanalyst": "Financial Analyst",
-#         "financialcontroller": "Financial Controller",
-#         "projectmanager": "Project Manager",
-#         "operationsmanager": "Operations Manager",
-#         "accountant": "Accountant",
-#         "accountingmanager": "Accounting Manager",
-#         "databaseadministrator": "Database Administrator",
-#         "systemsadministrator": "Systems Administrator",
-#         "devopsengineer": "DevOps Engineer",
-#         "cloudengineer": "Cloud Engineer",
-#         "pythondeveloper": "Python Developer",
-#         "javadeveloper": "Java Developer",
-#         "webdeveloper": "Web Developer",
-#         "webdesigner": "Web Designer",
-#         "graphicdesigner": "Graphic Designer",
-#         "humanresourcesmanager": "Human Resources Manager",
-#         "customerservicerepresentative": "Customer Service Representative"
-#     }
-
-#     return JOB_NAME_MAP.get(job.lower(), job.title())
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -52,20 +20,23 @@ DATA_PATH = os.path.join(BASE_DIR, "models", "resume_database.csv")
 
 print("Loading MiniLM Model...")
 
-model = SentenceTransformer(MODEL_PATH)
+# model = SentenceTransformer(MODEL_PATH)
+model = None
 
 print("MiniLM Loaded Successfully.")
 
 
 print("Loading FAISS Index...")
 
-index = faiss.read_index(INDEX_PATH)
+# index = faiss.read_index(INDEX_PATH)
+index = None
 
 print("FAISS Loaded Successfully.")
 
 print("Loading Resume Database...")
 
-resume_df = pd.read_csv(DATA_PATH)
+# resume_df = pd.read_csv(DATA_PATH)
+resume_df = None
 
 print("Database Loaded Successfully.")
 
@@ -85,11 +56,38 @@ job_columns = [
 
 print()
 
-print("Total Resume :", len(resume_df))
+# print("Total Resume :", len(resume_df))
 
-print("Total Index :", index.ntotal)
+# print("Total Index :", index.ntotal)
 
 def recommend_jobs(resume_text, top_k=5):
+    
+    global model, index, resume_df
+
+    if model is None:
+
+        print("Loading MiniLM Model...")
+
+        model = SentenceTransformer(MODEL_PATH)
+
+        print("MiniLM Loaded Successfully.")
+
+    if index is None:
+
+        print("Loading FAISS Index...")
+
+        index = faiss.read_index(INDEX_PATH)
+
+        print("FAISS Loaded Successfully.")
+
+    if resume_df is None:
+
+        print("Loading Resume Database...")
+
+        resume_df = pd.read_csv(DATA_PATH)
+
+        print("Database Loaded Successfully.")
+
     """
     Recommend Top K Job Roles from Resume Text
     """

@@ -8,14 +8,18 @@ from pymupdf import FileDataError
 # Load EasyOCR Once
 # ===========================================
 
-reader = easyocr.Reader(['en'], gpu=False)
-
+# reader = easyocr.Reader(['en'], gpu=False)
+reader = None
 
 # ===========================================
 # PDF Extraction
 # ===========================================
 
 def extract_pdf_text(file_path):
+   
+    
+ 
+
 
     try:
         pdf = fitz.open(file_path)
@@ -76,7 +80,15 @@ def extract_docx_text(file_path):
 # ===========================================
 
 def extract_image_text(file_path):
+    
+    global reader
 
+    if reader is None:
+
+        print("Loading EasyOCR...")
+
+        reader = easyocr.Reader(['en'], gpu=False)
+        
     try:
 
         result = reader.readtext(file_path)
