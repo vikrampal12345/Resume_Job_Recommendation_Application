@@ -51,3 +51,8 @@ data/
 complete_resume_dataset.csv
 final_complete_resume_dataset.csv
 node_modules
+
+# Accidental root React project
+/src/
+/package.json
+/package-lock.json
