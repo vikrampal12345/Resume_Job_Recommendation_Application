@@ -1,4 +1,4 @@
-name: Build and deploy Python app to Azure Web App - resume-job-recommendation-api
+name: Deploy Python API to Azure
 
 on:
   push:
@@ -31,3 +31,9 @@ jobs:
           app-name: resume-job-recommendation-api
           slot-name: Production
           package: ./backend
+          startup-command: >
+            gunicorn
+            --bind=0.0.0.0
+            --timeout 600
+            -k uvicorn.workers.UvicornWorker
+            app.main:app
