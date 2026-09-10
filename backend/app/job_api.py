@@ -63,7 +63,13 @@ def search_jobs(job_role):
 
             "posted_date": job.get("job_posted_at"),
 
-            "apply_link": job.get("job_apply_link")
+            "apply_link": job.get("job_apply_link"),
+
+            # Keep the original JD so Syncronal can perform deep requirement
+            # and evidence analysis when a candidate opens a specific job.
+            "job_description": job.get("job_description"),
+
+            "job_id": job.get("job_id")
 
         })
 

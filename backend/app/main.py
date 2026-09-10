@@ -1,157 +1,544 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
 from app.predictor import ResumePredictor
 from app.ocr import extract_resume_text
+from app.job_api import search_jobs
+from app.job_formatter import format_job_name
+
+from app.requirement_extractor import extract_requirements
+from app.evidence_engine import analyze_job as analyze_job_evidence
+from app.decision_engine import decide_from_job_analysis
+
 import shutil
 import os
 import uuid
 import traceback
-from fastapi.middleware.cors import CORSMiddleware
-from app.job_api import search_jobs
-from pydantic import BaseModel
-from app.job_formatter import format_job_name
 
-# ===========================================
-# FastAPI App
-# ===========================================
+
+# ============================================================
+# APP
+# ============================================================
 
 app = FastAPI(
-    title="Resume Recommendation API",
-    version="1.0.0"
+    title="Syncronal Career Decision API",
+    description="AI-powered resume analysis, job recommendation and evidence-backed job decision engine.",
+    version="2.0.0"
 )
+
+
+# ============================================================
+# CORS
+# ============================================================
+
 app.add_middleware(
     CORSMiddleware,
-
     allow_origins=[
         "http://localhost:5173",
-        "https://resume-job-recommendation-applicati.vercel.app"
+        "https://syncronal.vercel.app"
     ],
-
     allow_credentials=True,
-
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
-# ===========================================
-# Load Predictor Once
-# ===========================================
+
+
+# ============================================================
+# INITIALIZE RESUME PREDICTOR
+# ============================================================
 
 predictor = ResumePredictor()
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# ===========================================
-# Request Model
-# ===========================================
+# ============================================================
+# UPLOAD DIRECTORY
+# ============================================================
 
-# class ResumeRequest(BaseModel):
-#     resume_text: str
+UPLOAD_DIR = os.path.join(
+    os.path.dirname(__file__),
+    "uploads"
+)
 
-# ===========================================
-# Home Route
-# ===========================================
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+# ============================================================
+# HOME
+# ============================================================
 
 @app.get("/")
 def home():
     return {
-        "message": "Resume Recommendation API Running Successfully"
+        "success": True,
+        "message": "Syncronal Career Decision API is running.",
+        "version": "2.0.0",
+        "endpoints": {
+            "predict": "/predict",
+            "live_jobs": "/live-jobs",
+            "analyze_job": "/analyze-job",
+            "debug_origin": "/debug-origin"
+        }
     }
 
-# ===========================================
-# Prediction Route
-# ===========================================
+
+# ============================================================
+# PREDICT / RESUME ANALYSIS
+# ============================================================
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict_resume(
+    file: UploadFile = File(...)
+):
 
-    # Allowed extensions
-    allowed_extensions = [".pdf", ".docx"]
-
-    extension = os.path.splitext(file.filename)[1].lower()
-
-    if extension not in allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF and DOCX files are supported."
-        )
-
-    # Unique filename
-    unique_filename = f"{uuid.uuid4()}{extension}"
-
-    file_path = os.path.join(
-        UPLOAD_FOLDER,
-        unique_filename
-    )
-
-    # Save uploaded file
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    temp_file = None
 
     try:
 
-        # OCR
-        resume_text = extract_resume_text(file_path)
+        # --------------------------------------------------------
+        # Validate file type
+        # --------------------------------------------------------
 
-        # Recommendation
-        result = predictor.predict(resume_text)
+        filename = file.filename or ""
+
+        allowed_extensions = {
+            ".pdf",
+            ".docx"
+        }
+
+        extension = os.path.splitext(filename)[1].lower()
+
+        if extension not in allowed_extensions:
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF and DOCX resume files are supported."
+            )
+
+        # --------------------------------------------------------
+        # Generate temporary filename
+        # --------------------------------------------------------
+
+        temp_filename = f"{uuid.uuid4()}{extension}"
+
+        temp_file = os.path.join(
+            UPLOAD_DIR,
+            temp_filename
+        )
+
+        # --------------------------------------------------------
+        # Save uploaded file
+        # --------------------------------------------------------
+
+        with open(temp_file, "wb") as buffer:
+            shutil.copyfileobj(
+                file.file,
+                buffer
+            )
+
+        # --------------------------------------------------------
+        # Extract resume text
+        # --------------------------------------------------------
+
+        resume_text = extract_resume_text(
+            temp_file
+        )
+
+        if not resume_text or not resume_text.strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from the resume."
+            )
+
+        # --------------------------------------------------------
+        # Existing resume prediction system
+        # --------------------------------------------------------
+
+        result = predictor.predict(
+            resume_text
+        )
+
+        # --------------------------------------------------------
+        # Make sure result is a dictionary
+        # --------------------------------------------------------
+
+        if not isinstance(result, dict):
+            result = {
+                "prediction": result
+            }
+
+        # --------------------------------------------------------
+        # IMPORTANT:
+        # Return resume_text so frontend can reuse it
+        # for /analyze-job
+        # --------------------------------------------------------
+
+        result["resume_text"] = resume_text
 
         return result
 
+    except HTTPException:
+        raise
+
     except Exception as e:
+
+        print("\n[PREDICT ERROR]")
+        print(str(e))
         traceback.print_exc()
 
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=f"Resume prediction failed: {str(e)}"
         )
 
     finally:
 
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        # --------------------------------------------------------
+        # Delete temporary uploaded file
+        # --------------------------------------------------------
+
+        if temp_file and os.path.exists(temp_file):
+
+            try:
+                os.remove(temp_file)
+
+            except Exception as cleanup_error:
+
+                print(
+                    "[UPLOAD CLEANUP ERROR]",
+                    cleanup_error
+                )
+
+
+# ============================================================
+# LIVE JOB SEARCH
+# ============================================================
 
 class LiveJobsRequest(BaseModel):
 
     recommendations: list
+
+
 @app.post("/live-jobs")
-async def live_jobs(request: LiveJobsRequest):
-    print("LIVE JOBS ENDPOINT CALLED")
-    print(request.recommendations)
+def live_jobs(
+    request: LiveJobsRequest
+):
+
     try:
+
+        if not request.recommendations:
+
+            raise HTTPException(
+                status_code=400,
+                detail="No job recommendations provided."
+            )
+
         all_jobs = []
+
+        # --------------------------------------------------------
+        # Search jobs for recommended roles
+        # --------------------------------------------------------
 
         for recommendation in request.recommendations[:3]:
 
-            role = format_job_name(recommendation["job_role"])
+            # Support different possible recommendation formats
 
-            print("Searching: ", role)
+            if isinstance(
+                recommendation,
+                str
+            ):
 
-            jobs = search_jobs(role)
+                role = recommendation
 
-            all_jobs.extend(jobs)
+            elif isinstance(
+                recommendation,
+                dict
+            ):
+
+                role = (
+                    recommendation.get("role")
+                    or recommendation.get("job_role")
+                    or recommendation.get("title")
+                )
+
+            else:
+
+                continue
+
+            if not role:
+                continue
+
+            # ----------------------------------------------------
+            # JSearch
+            # ----------------------------------------------------
+
+            jobs = search_jobs(
+                role
+            )
+
+            # ----------------------------------------------------
+            # Format jobs
+            # ----------------------------------------------------
+
+            for job in jobs:
+
+                try:
+
+                    job["job_title"] = format_job_name(
+                        job.get(
+                            "job_title",
+                            ""
+                        )
+                    )
+
+                except Exception:
+                    pass
+
+                all_jobs.append(job)
 
         return {
             "success": True,
             "jobs": all_jobs
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        import traceback
+
+        print("\n[LIVE JOB ERROR]")
+        print(str(e))
         traceback.print_exc()
 
+        raise HTTPException(
+            status_code=500,
+            detail=f"Live job search failed: {str(e)}"
+        )
+
+
+# ============================================================
+# JOB ANALYSIS REQUEST
+# ============================================================
+
+class JobAnalysisRequest(BaseModel):
+
+    # ========================================================
+    # CANDIDATE RESUME
+    # ========================================================
+
+    resume_text: str
+
+    # ========================================================
+    # JSEARCH JOB DATA
+    # ========================================================
+
+    company: str | None = None
+
+    job_title: str | None = None
+
+    location: str | None = None
+
+    employment_type: str | None = None
+
+    salary: str | None = None
+
+    posted_date: str | None = None
+
+    apply_link: str | None = None
+
+    job_description: str
+
+    job_id: str | None = None
+
+
+# ============================================================
+# ANALYZE SPECIFIC JOB
+# ============================================================
+
+@app.post("/analyze-job")
+def analyze_job_endpoint(
+    request: JobAnalysisRequest
+):
+
+    try:
+
+        print("\n")
+        print("=" * 70)
+        print("SYNCRONAL JOB ANALYSIS")
+        print("=" * 70)
+
+        print(
+            f"Company     : {request.company}"
+        )
+
+        print(
+            f"Job Title   : {request.job_title}"
+        )
+
+        print(
+            f"Location    : {request.location}"
+        )
+
+        print("=" * 70)
+
+        # ====================================================
+        # VALIDATE RESUME
+        # ====================================================
+
+        if not request.resume_text.strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="resume_text cannot be empty."
+            )
+
+        # ====================================================
+        # VALIDATE JOB DESCRIPTION
+        # ====================================================
+
+        if not request.job_description.strip():
+
+            raise HTTPException(
+                status_code=400,
+                detail="job_description cannot be empty."
+            )
+
+        # ====================================================
+        # STEP 1
+        # REQUIREMENT EXTRACTION
+        # ====================================================
+
+        print(
+            "\n[1/3] Extracting job requirements..."
+        )
+
+        requirements = extract_requirements(
+            request.job_description,
+            use_llm=True
+        )
+
+        print(
+            "[RequirementExtractor] Completed."
+        )
+
+        # ====================================================
+        # STEP 2
+        # EVIDENCE ENGINE
+        # ====================================================
+
+        print(
+            "\n[2/3] Finding resume evidence..."
+        )
+
+        evidence_result = analyze_job_evidence(
+            resume_text=request.resume_text,
+            job_requirements=requirements
+        )
+
+        print(
+            "[EvidenceEngine] Completed."
+        )
+
+        # ====================================================
+        # STEP 3
+        # DECISION ENGINE
+        # ====================================================
+
+        print(
+            "\n[3/3] Making application decision..."
+        )
+
+        decision = decide_from_job_analysis(
+            evidence_result
+        )
+
+        print(
+            "[DecisionEngine] Completed."
+        )
+
+        print(
+            f"\nFINAL DECISION: "
+            f"{decision.get('decision')}"
+        )
+
+        print("=" * 70)
+        print()
+
+        # ====================================================
+        # FINAL RESPONSE
+        # ====================================================
+
         return {
-            "success": False,
-            "error": str(e)
+
+            "success": True,
+
+            # ------------------------------------------------
+            # ORIGINAL JOB
+            # ------------------------------------------------
+
+            "job": {
+
+                "company": request.company,
+
+                "job_title": request.job_title,
+
+                "location": request.location,
+
+                "employment_type": request.employment_type,
+
+                "salary": request.salary,
+
+                "posted_date": request.posted_date,
+
+                "apply_link": request.apply_link,
+
+                "job_id": request.job_id
+            },
+
+            # ------------------------------------------------
+            # EXTRACTED REQUIREMENTS
+            # ------------------------------------------------
+
+            "requirements": requirements,
+
+            # ------------------------------------------------
+            # RESUME EVIDENCE
+            # ------------------------------------------------
+
+            "evidence": evidence_result,
+
+            # ------------------------------------------------
+            # FINAL DECISION
+            # ------------------------------------------------
+
+            "decision": decision
         }
 
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        print("\n[ANALYZE JOB ERROR]")
+        print(str(e))
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Job analysis failed: {str(e)}"
+        )
+
+
+# ============================================================
+# DEBUG ORIGIN
+# ============================================================
 
 @app.get("/debug-origin")
-async def debug_origin():
+def debug_origin():
+
     return {
-        "allowed_origins": [
-            "http://localhost:5173",
-            "https://resume-job-recommendation-applicati.vercel.app"
-        ]
+        "success": True,
+        "message": "Syncronal backend is reachable.",
+        "origin": "FastAPI",
+        "version": "2.0.0"
     }
