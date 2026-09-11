@@ -937,6 +937,18 @@ def _phrase_present(
     phrase: str,
     text: str,
 ) -> bool:
+    """
+    Check whether a requirement phrase is explicitly present in text.
+
+    Matching rules:
+        1. Never use raw substring matching.
+        2. Use explicit aliases for known technologies.
+        3. Use token boundaries so that:
+               SQL != PostgreSQL
+               C != C++
+               Go != Google
+        4. Allow flexible whitespace inside multi-word phrases.
+    """
 
     phrase = _clean_text(
         phrase
@@ -957,93 +969,102 @@ def _phrase_present(
         text
     )
 
-    if not phrase_key:
+    if not phrase_key or not text_key:
         return False
-
-    if phrase_key in text_key:
-        return True
 
     aliases = {
         "go": [
-            r"\bgo\b",
-            r"\bgolang\b",
+            r"(?<![A-Za-z0-9_])go(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])golang(?![A-Za-z0-9_])",
         ],
 
         "golang": [
-            r"\bgo\b",
-            r"\bgolang\b",
+            r"(?<![A-Za-z0-9_])go(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])golang(?![A-Za-z0-9_])",
         ],
 
         "aws": [
-            r"\baws\b",
-            r"\bamazon web services\b",
+            r"(?<![A-Za-z0-9_])aws(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])amazon\s+web\s+services(?![A-Za-z0-9_])",
         ],
 
         "google cloud platform": [
-            r"\bgcp\b",
-            r"\bgoogle cloud\b",
-            r"\bgoogle cloud platform\b",
+            r"(?<![A-Za-z0-9_])gcp(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])google\s+cloud(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])google\s+cloud\s+platform(?![A-Za-z0-9_])",
         ],
 
         "azure": [
-            r"\bazure\b",
+            r"(?<![A-Za-z0-9_])azure(?![A-Za-z0-9_])",
         ],
 
         "kafka": [
-            r"\bkafka\b",
+            r"(?<![A-Za-z0-9_])kafka(?![A-Za-z0-9_])",
         ],
 
         "kinesis": [
-            r"\bkinesis\b",
+            r"(?<![A-Za-z0-9_])kinesis(?![A-Za-z0-9_])",
         ],
 
         "docker": [
-            r"\bdocker\b",
+            r"(?<![A-Za-z0-9_])docker(?![A-Za-z0-9_])",
         ],
 
         "kubernetes": [
-            r"\bkubernetes\b",
-            r"\bk8s\b",
+            r"(?<![A-Za-z0-9_])kubernetes(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])k8s(?![A-Za-z0-9_])",
         ],
 
         "python": [
-            r"\bpython\b",
+            r"(?<![A-Za-z0-9_])python(?![A-Za-z0-9_])",
         ],
 
         "sql": [
-            r"\bsql\b",
+            r"(?<![A-Za-z0-9_])sql(?![A-Za-z0-9_])",
         ],
 
         "rest apis": [
-            r"\brest\s+apis?\b",
+            r"(?<![A-Za-z0-9_])rest\s+apis?(?![A-Za-z0-9_])",
         ],
 
         "fastapi": [
-            r"\bfastapi\b",
+            r"(?<![A-Za-z0-9_])fastapi(?![A-Za-z0-9_])",
         ],
 
         "spring boot": [
-            r"\bspring\s+boot\b",
+            r"(?<![A-Za-z0-9_])spring\s+boot(?![A-Za-z0-9_])",
         ],
 
         "prometheus": [
-            r"\bprometheus\b",
+            r"(?<![A-Za-z0-9_])prometheus(?![A-Za-z0-9_])",
         ],
 
         "grafana": [
-            r"\bgrafana\b",
+            r"(?<![A-Za-z0-9_])grafana(?![A-Za-z0-9_])",
         ],
 
         "opentelemetry": [
-            r"\bopen\s*telemetry\b",
-            r"\bopentelemetry\b",
+            r"(?<![A-Za-z0-9_])open\s*telemetry(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])opentelemetry(?![A-Za-z0-9_])",
         ],
 
         "ci/cd": [
-            r"\bci\s*/\s*cd\b",
-            r"\bcicd\b",
-            r"\bcontinuous integration\b",
-            r"\bcontinuous deployment\b",
+            r"(?<![A-Za-z0-9_])ci\s*/\s*cd(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])cicd(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])continuous\s+integration(?![A-Za-z0-9_])",
+            r"(?<![A-Za-z0-9_])continuous\s+deployment(?![A-Za-z0-9_])",
+        ],
+
+        "c": [
+            r"(?<![A-Za-z0-9_])c(?![A-Za-z0-9_])",
+        ],
+
+        "c++": [
+            r"(?<![A-Za-z0-9_])c\+\+(?![A-Za-z0-9_])",
+        ],
+
+        "c#": [
+            r"(?<![A-Za-z0-9_])c#(?![A-Za-z0-9_])",
         ],
     }
 
@@ -1052,15 +1073,19 @@ def _phrase_present(
     )
 
     if patterns:
-
         for pattern in patterns:
-
             if re.search(
                 pattern,
-                text,
+                text_key,
                 flags=re.IGNORECASE,
             ):
                 return True
+
+    # --------------------------------------------------------
+    # Generic exact phrase matching.
+    #
+    # No raw substring check.
+    # --------------------------------------------------------
 
     escaped = re.escape(
         phrase_key
@@ -1071,15 +1096,19 @@ def _phrase_present(
         r"\s+",
     )
 
+    pattern = (
+        rf"(?<![A-Za-z0-9_])"
+        rf"{escaped}"
+        rf"(?![A-Za-z0-9_])"
+    )
+
     return bool(
         re.search(
-            rf"\b{escaped}\b",
+            pattern,
             text_key,
             flags=re.IGNORECASE,
         )
     )
-
-
 # ============================================================
 # DIRECT EVIDENCE
 # ============================================================
