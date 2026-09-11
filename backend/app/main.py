@@ -214,9 +214,13 @@ async def predict_resume(
 # LIVE JOB SEARCH
 # ============================================================
 
+# ============================================================
+# LIVE JOB SEARCH
+# ============================================================
+
 class LiveJobsRequest(BaseModel):
 
-    recommendations: list
+    target_role: str
 
 
 @app.post("/live-jobs")
@@ -226,78 +230,59 @@ def live_jobs(
 
     try:
 
-        if not request.recommendations:
+        # --------------------------------------------------------
+        # Validate target role
+        # --------------------------------------------------------
+
+        target_role = request.target_role.strip()
+
+        if not target_role:
 
             raise HTTPException(
                 status_code=400,
-                detail="No job recommendations provided."
+                detail="Target role cannot be empty."
             )
+
+        # --------------------------------------------------------
+        # Search jobs ONLY for the role selected/typed by user
+        # --------------------------------------------------------
+
+        print("\n[LIVE JOB SEARCH]")
+        print(f"Target Role : {target_role}")
+
+        jobs = search_jobs(
+            target_role
+        )
+
+        # --------------------------------------------------------
+        # Format returned job titles
+        # --------------------------------------------------------
 
         all_jobs = []
 
-        # --------------------------------------------------------
-        # Search jobs for recommended roles
-        # --------------------------------------------------------
+        for job in jobs:
 
-        for recommendation in request.recommendations[:3]:
+            try:
 
-            # Support different possible recommendation formats
-
-            if isinstance(
-                recommendation,
-                str
-            ):
-
-                role = recommendation
-
-            elif isinstance(
-                recommendation,
-                dict
-            ):
-
-                role = (
-                    recommendation.get("role")
-                    or recommendation.get("job_role")
-                    or recommendation.get("title")
+                job["job_title"] = format_job_name(
+                    job.get(
+                        "job_title",
+                        ""
+                    )
                 )
 
-            else:
+            except Exception:
+                pass
 
-                continue
+            all_jobs.append(job)
 
-            if not role:
-                continue
-
-            # ----------------------------------------------------
-            # JSearch
-            # ----------------------------------------------------
-
-            jobs = search_jobs(
-                role
-            )
-
-            # ----------------------------------------------------
-            # Format jobs
-            # ----------------------------------------------------
-
-            for job in jobs:
-
-                try:
-
-                    job["job_title"] = format_job_name(
-                        job.get(
-                            "job_title",
-                            ""
-                        )
-                    )
-
-                except Exception:
-                    pass
-
-                all_jobs.append(job)
+        # --------------------------------------------------------
+        # Final response
+        # --------------------------------------------------------
 
         return {
             "success": True,
+            "target_role": target_role,
             "jobs": all_jobs
         }
 
@@ -314,8 +299,6 @@ def live_jobs(
             status_code=500,
             detail=f"Live job search failed: {str(e)}"
         )
-
-
 # ============================================================
 # JOB ANALYSIS REQUEST
 # ============================================================

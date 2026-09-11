@@ -602,6 +602,92 @@ def _semantic_family(value: str) -> Optional[str]:
 def extract_experience(text: str) -> Dict[str, Any]:
     """
     Extract minimum years of experience.
+
+    Examples:
+        6+ years
+        5 years of experience
+        minimum 3 years
+        at least 4 years
+    """
+
+    text = _clean_text(text)
+
+    patterns = [
+        r"(?:at least|minimum of|min(?:imum)?|more than|over)?\s*"
+        r"(\d+(?:\.\d+)?)\s*\+?\s*years?\s+"
+        r"(?:of\s+)?experience",
+
+        r"(\d+(?:\.\d+)?)\s*\+?\s*years?\s+experience",
+    ]
+
+    candidates: List[float] = []
+
+    for pattern in patterns:
+        for match in re.finditer(
+            pattern,
+            text,
+            flags=re.IGNORECASE,
+        ):
+            try:
+                candidates.append(float(match.group(1)))
+            except (ValueError, TypeError):
+                pass
+
+    if not candidates:
+        return {
+            "minimum_years": None,
+            "evidence": None,
+        }
+
+    minimum_years = max(candidates)
+
+    evidence = None
+
+    for pattern in patterns:
+        match = re.search(
+            pattern,
+            text,
+            flags=re.IGNORECASE,
+        )
+
+        if not match:
+            continue
+
+        # Capture only the sentence containing the experience requirement.
+        sentence_start = max(
+            text.rfind(".", 0, match.start()),
+            text.rfind("!", 0, match.start()),
+            text.rfind("?", 0, match.start()),
+        )
+
+        sentence_end_candidates = [
+            position
+            for position in (
+                text.find(".", match.end()),
+                text.find("!", match.end()),
+                text.find("?", match.end()),
+            )
+            if position != -1
+        ]
+
+        sentence_end = (
+            min(sentence_end_candidates)
+            if sentence_end_candidates
+            else len(text)
+        )
+
+        evidence = text[
+            sentence_start + 1 : sentence_end + 1
+        ].strip()
+
+        break
+
+    return {
+        "minimum_years": minimum_years,
+        "evidence": evidence,
+    }
+    """
+    Extract minimum years of experience.
     """
 
     text = _clean_text(text)
@@ -802,7 +888,6 @@ def extract_role(text: str) -> Optional[str]:
 # ============================================================
 # REQUIREMENT OBJECT CREATION
 # ============================================================
-
 def _make_requirement(
     requirement: str,
     importance: str = "UNKNOWN",
@@ -812,6 +897,169 @@ def _make_requirement(
     evidence: Optional[str] = None,
     source: str = "unknown",
 ) -> Dict[str, Any]:
+    """
+    Create one normalized requirement while preserving its semantic
+    identity and explicit logical structure.
+
+    Important rules:
+        - Concrete technologies remain concrete technologies.
+        - Semantic family names are used only when the requirement
+          itself represents that family.
+        - Multiple options do NOT automatically become ANY_OF.
+        - Explicit ALL_OF / ANY_OF logic is preserved.
+    """
+
+    requirement = normalize_requirement_name(requirement)
+    importance = normalize_importance(importance)
+    requirement_type = normalize_type(requirement_type)
+    logic = normalize_logic(logic)
+
+    # --------------------------------------------------------
+    # Normalize options
+    # --------------------------------------------------------
+
+    clean_options: List[str] = []
+
+    for option in options or []:
+        option = normalize_requirement_name(option)
+
+        if not option:
+            continue
+
+        if _normalize_key(option) == "equivalent":
+            continue
+
+        if option.lower() not in {
+            existing.lower()
+            for existing in clean_options
+        }:
+            clean_options.append(option)
+
+    # --------------------------------------------------------
+    # Canonicalize ONLY explicit grouped requirements.
+    # --------------------------------------------------------
+    #
+    # Examples:
+    #
+    #   options = [Go, Rust]
+    #   logic   = ANY_OF
+    #
+    #   -> Go or Rust
+    #
+    #   options = [Docker, Kubernetes]
+    #   logic   = ALL_OF
+    #
+    #   -> Containerization and Orchestration
+    #
+    # But:
+    #
+    #   Docker
+    #
+    # must remain:
+    #
+    #   Docker
+    #
+    # and:
+    #
+    #   Kubernetes
+    #
+    # must remain:
+    #
+    #   Kubernetes
+    #
+    # --------------------------------------------------------
+
+    option_keys = {
+        _normalize_key(option)
+        for option in clean_options
+    }
+
+    if (
+        option_keys == {"go", "rust"}
+        and logic == "ANY_OF"
+    ):
+        requirement = "Go or Rust"
+
+    elif (
+        option_keys.issubset(
+            {
+                "aws",
+                "google cloud platform",
+                "azure",
+            }
+        )
+        and len(option_keys) >= 2
+        and logic == "ANY_OF"
+    ):
+        requirement = "Cloud provider"
+
+    elif (
+        option_keys == {"kafka", "kinesis"}
+        and logic == "ANY_OF"
+    ):
+        requirement = "Event streaming"
+
+    elif (
+        option_keys == {
+            "prometheus",
+            "grafana",
+        }
+        and logic == "ANY_OF"
+    ):
+        requirement = "Metrics and monitoring tooling"
+
+    elif (
+        option_keys == {
+            "docker",
+            "kubernetes",
+        }
+        and logic == "ALL_OF"
+    ):
+        requirement = "Containerization and Orchestration"
+
+    elif (
+        option_keys == {"opentelemetry"}
+        and (
+            _normalize_key(requirement)
+            in {
+                "distributed tracing",
+                "distributed tracing tooling",
+            }
+            or "opentelemetry"
+            in _normalize_key(requirement)
+        )
+    ):
+        requirement = "Distributed Tracing"
+
+    # --------------------------------------------------------
+    # Do NOT collapse concrete requirements into their broader
+    # semantic family.
+    #
+    # Examples:
+    #
+    #   Docker      -> Docker
+    #   Kubernetes  -> Kubernetes
+    #   AWS         -> AWS
+    #   Kafka       -> Kafka
+    #   Prometheus  -> Prometheus
+    #
+    # This is critical because:
+    #
+    #   Docker is preferred.
+    #   Kubernetes is required.
+    #
+    # must remain two independent requirements.
+    # --------------------------------------------------------
+
+    return {
+        "requirement": requirement,
+        "importance": importance,
+        "type": requirement_type,
+        "logic": logic,
+        "options": clean_options,
+        "evidence": _clean_text(evidence) or None,
+        "source": source,
+    }
 
     requirement = normalize_requirement_name(requirement)
     importance = normalize_importance(importance)
@@ -2108,7 +2356,6 @@ def _detect_alternatives(text: str) -> List[Dict[str, Any]]:
 # REQUIREMENT MERGING
 # ============================================================
 
-def _requirement_key(item: Dict[str, Any]) -> str:
     """
     Create a stable semantic key for deduplication.
 
@@ -2152,7 +2399,113 @@ def _requirement_key(item: Dict[str, Any]) -> str:
         + "|"
         + "|".join(options)
     )
+def _requirement_key(
+    item: Dict[str, Any]
+) -> str:
+    """
+    Build a stable identity key for one requirement.
 
+    Concrete technologies keep their own identity:
+        Docker      -> docker|
+        Kubernetes  -> kubernetes|
+
+    Explicit logical groups keep their grouped identity:
+        Docker + Kubernetes ALL_OF
+            -> containerization_and_orchestration|all_of|docker|kubernetes
+
+    Broad semantic families are NOT used to collapse independent
+    concrete technologies.
+    """
+
+    requirement = _normalize_key(
+        item.get(
+            "requirement",
+            ""
+        )
+    )
+
+    logic = normalize_logic(
+        item.get(
+            "logic",
+            "SINGLE"
+        )
+    )
+
+    options = sorted(
+        {
+            _normalize_key(option)
+            for option in item.get(
+                "options",
+                []
+            )
+            if _clean_text(option)
+        }
+    )
+
+    option_key = "|".join(options)
+
+    # --------------------------------------------------------
+    # Explicit grouped requirements
+    # --------------------------------------------------------
+
+    option_set = set(options)
+
+    if option_set == {"go", "rust"}:
+        return "go_rust|" + logic + "|" + option_key
+
+    if option_set == {
+        "aws",
+        "google cloud platform",
+        "azure",
+    }:
+        return "cloud_provider|" + logic + "|" + option_key
+
+    if option_set == {
+        "kafka",
+        "kinesis",
+    }:
+        return "event_streaming|" + logic + "|" + option_key
+
+    if option_set == {
+        "prometheus",
+        "grafana",
+    }:
+        return "metrics_monitoring|" + logic + "|" + option_key
+
+    if option_set == {
+        "docker",
+        "kubernetes",
+    }:
+        return (
+            "containerization_and_orchestration|"
+            + logic
+            + "|"
+            + option_key
+        )
+
+    if option_set == {"opentelemetry"} and (
+        "tracing" in requirement
+        or "opentelemetry" in requirement
+    ):
+        return (
+            "distributed_tracing|"
+            + logic
+            + "|"
+            + option_key
+        )
+
+    # --------------------------------------------------------
+    # Concrete requirement identity
+    # --------------------------------------------------------
+    #
+    # IMPORTANT:
+    # Do not call _semantic_family(requirement) here.
+    #
+    # Docker and Kubernetes are different requirements even
+    # though both belong to the containerization family.
+    # --------------------------------------------------------
+
+    return requirement + "|" + option_key
 
 def _is_same_or_parent(
     first: str,
@@ -2502,6 +2855,475 @@ def _merge_requirement_lists(
     """
     Merge Gemini requirements with deterministic rule requirements.
 
+    Rules
+    -----
+    1. Deterministic rules control explicit logical structure:
+       ANY_OF / ALL_OF.
+    2. Deterministic rule importance wins when it is explicitly known.
+    3. Gemini importance is preserved when no deterministic importance
+       is available.
+    4. Explicit logical groups are merged with their semantic family.
+    5. Independent concrete technologies must NOT be merged merely
+       because they belong to the same broad semantic family.
+    6. Evidence and provenance are preserved.
+    """
+
+    combined: List[Dict[str, Any]] = []
+
+    # --------------------------------------------------------
+    # Deterministic rules first.
+    # --------------------------------------------------------
+    #
+    # Explicit patterns such as:
+    #
+    #   Go or Rust
+    #   AWS or GCP
+    #   Kafka or Kinesis
+    #   Docker and Kubernetes
+    #
+    # should establish the logical structure before Gemini
+    # requirements are merged into the result.
+    # --------------------------------------------------------
+
+    combined.extend(rule_requirements or [])
+    combined.extend(llm_requirements or [])
+
+    output: List[Dict[str, Any]] = []
+
+    importance_rank = {
+        "UNKNOWN": 0,
+        "NICE_TO_HAVE": 1,
+        "PREFERRED": 2,
+        "REQUIRED": 3,
+    }
+
+    def normalized_options(
+        item: Dict[str, Any],
+    ) -> set:
+        return {
+            _normalize_key(option)
+            for option in item.get("options", [])
+            if _clean_text(option)
+        }
+
+    def family_key(
+        item: Dict[str, Any],
+    ) -> str:
+        """
+        Return a semantic identity for safe merging.
+
+        IMPORTANT:
+        Concrete technologies such as Docker and Kubernetes must
+        remain separate unless the JD explicitly grouped them.
+
+        Therefore broad semantic families are used only for:
+            - explicit option groups
+            - generic family names
+
+        Example:
+
+            Docker                 -> docker
+            Kubernetes             -> kubernetes
+            Docker + Kubernetes    -> containerization_group
+        """
+
+        name = _normalize_key(
+            item.get("requirement", "")
+        )
+
+        options = normalized_options(item)
+
+        # ----------------------------------------------------
+        # Explicit logical groups.
+        # ----------------------------------------------------
+
+        if options == {"go", "rust"}:
+            return "go_rust_group"
+
+        if options == {
+            "aws",
+            "google cloud platform",
+            "azure",
+        }:
+            return "cloud_provider_group"
+
+        if options == {"kafka", "kinesis"}:
+            return "event_streaming_group"
+
+        if options == {
+            "prometheus",
+            "grafana",
+        }:
+            return "metrics_monitoring_group"
+
+        if options == {
+            "docker",
+            "kubernetes",
+        }:
+            return "containerization_group"
+
+        if options == {"opentelemetry"} and (
+            "tracing" in name
+            or "opentelemetry" in name
+        ):
+            return "distributed_tracing_group"
+
+        # ----------------------------------------------------
+        # Generic semantic families.
+        # ----------------------------------------------------
+        #
+        # Only generic names are collapsed into their family.
+        # Concrete technologies are NOT collapsed here.
+        # ----------------------------------------------------
+
+        generic_family_names = {
+            "programming language",
+            "programming languages",
+            "cloud provider",
+            "cloud provider experience",
+            "major cloud provider",
+            "major cloud provider experience",
+            "event streaming",
+            "event streaming technology",
+            "event streaming experience",
+            "metrics and monitoring",
+            "metrics and monitoring tooling",
+            "monitoring",
+            "monitoring experience",
+            "monitoring tooling",
+            "containerization and orchestration",
+            "containerization",
+            "distributed tracing",
+            "distributed tracing tooling",
+        }
+
+        if name in generic_family_names:
+            family = _semantic_family(name)
+
+            if family:
+                return family
+
+        # ----------------------------------------------------
+        # Exact concrete requirement identity.
+        # ----------------------------------------------------
+        #
+        # Docker and Kubernetes must stay separate.
+        # AWS and GCP must stay separate when the JD does not
+        # explicitly connect them with OR / ANY_OF.
+        # --------------------------------------------------------
+
+        return name
+
+    def merge_options(
+        first: List[str],
+        second: List[str],
+    ) -> List[str]:
+        """
+        Merge normalized option lists without inventing options.
+        """
+
+        merged: List[str] = []
+
+        for option in list(first or []) + list(second or []):
+            normalized = normalize_requirement_name(
+                option
+            )
+
+            if not normalized:
+                continue
+
+            if _normalize_key(normalized) == "equivalent":
+                continue
+
+            if normalized.lower() not in {
+                existing.lower()
+                for existing in merged
+            }:
+                merged.append(normalized)
+
+        return merged
+
+    for raw_item in combined:
+
+        if not isinstance(raw_item, dict):
+            continue
+
+        if not _clean_text(
+            raw_item.get("requirement", "")
+        ):
+            continue
+
+        item = _make_requirement(
+            requirement=raw_item.get(
+                "requirement",
+                "",
+            ),
+            importance=raw_item.get(
+                "importance",
+                "UNKNOWN",
+            ),
+            requirement_type=raw_item.get(
+                "type",
+                "UNKNOWN",
+            ),
+            logic=raw_item.get(
+                "logic",
+                "SINGLE",
+            ),
+            options=raw_item.get(
+                "options"
+            ) or [],
+            evidence=raw_item.get(
+                "evidence"
+            ),
+            source=raw_item.get(
+                "source",
+                "unknown",
+            ),
+        )
+
+        family = family_key(item)
+
+        existing = None
+
+        for candidate in output:
+            if family_key(candidate) == family:
+                existing = candidate
+                break
+
+        # ----------------------------------------------------
+        # No equivalent requirement yet.
+        # ----------------------------------------------------
+
+        if existing is None:
+            output.append(item)
+            continue
+
+        existing_source = str(
+            existing.get(
+                "source",
+                "",
+            )
+        ).lower()
+
+        incoming_source = str(
+            item.get(
+                "source",
+                "",
+            )
+        ).lower()
+
+        # ====================================================
+        # LOGICAL STRUCTURE
+        # ====================================================
+
+        if incoming_source == "rule":
+
+            # Deterministic rule is authoritative for explicit
+            # logical relationships.
+            existing["logic"] = normalize_logic(
+                item.get(
+                    "logic"
+                )
+            )
+
+            existing["options"] = merge_options(
+                item.get(
+                    "options",
+                    [],
+                ),
+                existing.get(
+                    "options",
+                    [],
+                ),
+            )
+
+            if item.get("evidence"):
+                existing["evidence"] = item[
+                    "evidence"
+                ]
+
+            existing["source"] = "rule"
+
+        elif existing_source == "rule":
+
+            # Never allow an LLM result to destroy an explicit
+            # deterministic logical relationship.
+            existing["logic"] = normalize_logic(
+                existing.get(
+                    "logic"
+                )
+            )
+
+            existing["options"] = merge_options(
+                existing.get(
+                    "options",
+                    [],
+                ),
+                item.get(
+                    "options",
+                    [],
+                ),
+            )
+
+        else:
+
+            # No deterministic rule exists.
+            # Preserve explicit logical semantics.
+            existing_logic = normalize_logic(
+                existing.get(
+                    "logic"
+                )
+            )
+
+            incoming_logic = normalize_logic(
+                item.get(
+                    "logic"
+                )
+            )
+
+            if (
+                existing_logic == "ALL_OF"
+                or incoming_logic == "ALL_OF"
+            ):
+                existing["logic"] = "ALL_OF"
+
+            elif (
+                existing_logic == "ANY_OF"
+                or incoming_logic == "ANY_OF"
+            ):
+                existing["logic"] = "ANY_OF"
+
+            else:
+                existing["logic"] = "SINGLE"
+
+            existing["options"] = merge_options(
+                existing.get(
+                    "options",
+                    [],
+                ),
+                item.get(
+                    "options",
+                    [],
+                ),
+            )
+
+        # ====================================================
+        # IMPORTANCE
+        # ====================================================
+
+        existing_importance = normalize_importance(
+            existing.get(
+                "importance"
+            )
+        )
+
+        incoming_importance = normalize_importance(
+            item.get(
+                "importance"
+            )
+        )
+
+        # Deterministic rule importance is trusted because
+        # it comes from local wording around an explicit
+        # logical pattern.
+        if existing_source == "rule":
+
+            if (
+                existing_importance == "UNKNOWN"
+                and incoming_importance != "UNKNOWN"
+            ):
+                existing["importance"] = (
+                    incoming_importance
+                )
+
+        elif incoming_source == "rule":
+
+            if incoming_importance != "UNKNOWN":
+                existing["importance"] = (
+                    incoming_importance
+                )
+
+        else:
+
+            # No deterministic rule.
+            # Never replace a known classification with UNKNOWN.
+            if (
+                existing_importance == "UNKNOWN"
+                and incoming_importance != "UNKNOWN"
+            ):
+                existing["importance"] = (
+                    incoming_importance
+                )
+
+            elif (
+                existing_importance != "UNKNOWN"
+                and incoming_importance != "UNKNOWN"
+            ):
+                # Preserve the existing known classification.
+                existing["importance"] = (
+                    existing_importance
+                )
+
+        # ====================================================
+        # TYPE
+        # ====================================================
+
+        existing_type = normalize_type(
+            existing.get(
+                "type"
+            )
+        )
+
+        incoming_type = normalize_type(
+            item.get(
+                "type"
+            )
+        )
+
+        if (
+            existing_type == "UNKNOWN"
+            and incoming_type != "UNKNOWN"
+        ):
+            existing["type"] = incoming_type
+
+        # ====================================================
+        # EVIDENCE
+        # ====================================================
+        #
+        # Prefer deterministic rule evidence when a rule
+        # explicitly identified the requirement.
+        # Otherwise preserve existing evidence and only fill
+        # missing evidence from the incoming item.
+        # ====================================================
+
+        if (
+            incoming_source == "rule"
+            and item.get("evidence")
+        ):
+            existing["evidence"] = item[
+                "evidence"
+            ]
+
+        elif (
+            not existing.get("evidence")
+            and item.get("evidence")
+        ):
+            existing["evidence"] = item[
+                "evidence"
+            ]
+
+        # ====================================================
+        # SOURCE
+        # ====================================================
+
+        if incoming_source == "rule":
+            existing["source"] = "rule"
+
+    return output
+    """
+    Merge Gemini requirements with deterministic rule requirements.
+
     Rules:
         1. Deterministic rules control explicit logical structure
            (ANY_OF / ALL_OF).
@@ -2732,51 +3554,110 @@ def _remove_alternative_duplicates(
     requirements: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
     """
-    Remove standalone requirements when they are already represented
-    by a logical group.
+    Remove concrete requirements that are already represented by an
+    explicit logical group.
 
-    Example:
+    Examples:
 
-        Go
-        Rust
-        Go or Rust [ANY_OF]
+        Go + Rust + (Go OR Rust)
+            -> keep only Go OR Rust
 
-    becomes:
+        Docker + Kubernetes + (Docker AND Kubernetes)
+            -> keep only Docker AND Kubernetes
 
-        Go or Rust [ANY_OF]
+        OpenTelemetry + Distributed Tracing(OpenTelemetry)
+            -> keep only Distributed Tracing
+
+    Independent concrete technologies are preserved.
     """
 
+    if not requirements:
+        return []
+
     grouped_options = set()
+    grouped_single_options = set()
 
     for item in requirements:
-        if item.get("logic") != "ANY_OF":
+        if not isinstance(item, dict):
             continue
 
-        for option in item.get("options", []):
-            key = _normalize_key(option)
+        logic = normalize_logic(
+            item.get("logic", "SINGLE")
+        )
 
-            if key:
-                grouped_options.add(key)
+        options = item.get("options", [])
+
+        if not isinstance(options, list):
+            options = []
+
+        clean_options = {
+            _normalize_key(option)
+            for option in options
+            if _clean_text(option)
+        }
+
+        # A logical group must have at least two meaningful options.
+        if logic in {"ANY_OF", "ALL_OF"} and len(clean_options) >= 2:
+            grouped_options.update(
+                clean_options
+            )
+
+        # Single-option capability groups such as:
+        #
+        # Distributed Tracing
+        #   options = [OpenTelemetry]
+        #
+        # should suppress the standalone implementation.
+        if logic == "SINGLE" and len(clean_options) == 1:
+            requirement_name = _normalize_key(
+                item.get("requirement", "")
+            )
+
+            if requirement_name in {
+                "distributed tracing",
+                "distributed tracing tooling",
+            }:
+                grouped_single_options.update(
+                    clean_options
+                )
 
     output = []
 
     for item in requirements:
 
-        if item.get("logic") == "ANY_OF":
-            output.append(item)
+        if not isinstance(item, dict):
             continue
 
-        requirement = _normalize_key(
+        logic = normalize_logic(
+            item.get("logic", "SINGLE")
+        )
+
+        requirement_key = _normalize_key(
             item.get("requirement", "")
         )
 
-        if requirement in grouped_options:
+        options = item.get("options", [])
+
+        if not isinstance(options, list):
+            options = []
+
+        # Explicit logical groups are always preserved.
+        if logic in {"ANY_OF", "ALL_OF"} and len(options) >= 2:
+            output.append(item)
             continue
+
+        # Suppress a standalone technology when it is already one of
+        # the options in an explicit logical group.
+        if logic == "SINGLE":
+            if requirement_key in grouped_options:
+                continue
+
+            if requirement_key in grouped_single_options:
+                continue
 
         output.append(item)
 
     return output
-
 
 # ============================================================
 # PARENT / CHILD DEDUPLICATION
@@ -2786,84 +3667,101 @@ def _deduplicate_parent_child(
     requirements: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
     """
-    Remove redundant parent/child requirements.
+    Remove only true parent/child duplicates.
+
+    Independent concrete technologies must never be collapsed.
 
     Examples:
+        Spring + Spring Boot
+            -> keep Spring Boot when both represent the same requirement.
 
-        Kubernetes
-        Kubernetes Orchestration
+        Kubernetes + Kubernetes Orchestration
+            -> keep Kubernetes.
 
-    -> one requirement.
+        Docker + Kubernetes
+            -> keep BOTH.
 
-        Spring
-        Spring Boot
-
-    -> Spring Boot when the concrete implementation
-       is explicitly present.
-
-    This function does NOT collapse Docker + Kubernetes
-    because they are independent technologies when the
-    requirement uses ALL_OF.
+        Docker + Containerization
+            -> keep Docker when the concrete technology is explicitly present.
     """
 
     output: List[Dict[str, Any]] = []
 
     concrete_pairs = {
-        (
-            "spring",
-            "spring boot",
-        ),
-        (
-            "containerization",
-            "docker",
-        ),
-        (
-            "kubernetes orchestration",
-            "kubernetes",
-        ),
+        ("spring", "spring boot"),
+        ("containerization", "docker"),
+        ("kubernetes orchestration", "kubernetes"),
     }
 
     for item in requirements:
+        if not isinstance(item, dict):
+            continue
 
-        current = _normalize_key(
-            item.get(
-                "requirement",
-                "",
-            )
+        current_name = _clean_text(
+            item.get("requirement", "")
+        )
+
+        if not current_name:
+            continue
+
+        current_key = _normalize_key(
+            current_name
         )
 
         should_skip = False
 
         for existing in list(output):
-
-            existing_name = _normalize_key(
-                existing.get(
-                    "requirement",
-                    "",
-                )
+            existing_name = _clean_text(
+                existing.get("requirement", "")
             )
 
-            if current == existing_name:
+            if not existing_name:
                 continue
 
+            existing_key = _normalize_key(
+                existing_name
+            )
+
+            # Exact duplicate.
+            if current_key == existing_key:
+                should_skip = True
+                break
+
             pair = (
-                current,
-                existing_name,
+                current_key,
+                existing_key,
             )
 
             reverse_pair = (
-                existing_name,
-                current,
+                existing_key,
+                current_key,
             )
 
-            # Current is generic, existing is concrete.
+            # ----------------------------------------------------
+            # True parent -> concrete child relationship.
+            # ----------------------------------------------------
+            #
+            # Example:
+            #   Spring
+            #   Spring Boot
+            #
+            # Example:
+            #   Containerization
+            #   Docker
+            #
+            # Example:
+            #   Kubernetes Orchestration
+            #   Kubernetes
+            #
+            # Do NOT apply this to arbitrary technologies that
+            # merely belong to the same broad category.
+            # ----------------------------------------------------
+
             if pair in concrete_pairs:
                 should_skip = True
                 break
 
-            # Existing is generic, current is concrete.
             if reverse_pair in concrete_pairs:
-
                 output.remove(existing)
                 break
 
@@ -2871,7 +3769,6 @@ def _deduplicate_parent_child(
             output.append(item)
 
     return output
-
 
 # ============================================================
 # FINAL SANITIZATION
