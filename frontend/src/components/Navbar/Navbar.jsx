@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
 import {
   Home,
   FileSearch,
@@ -14,8 +15,58 @@ import "./Navbar.css";
 import logo from "../../assets/syncronal-logo.png";
 
 function Navbar() {
+  const navigate = useNavigate();
+
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // ================= USER DATA =================
+
+  const storedUser = localStorage.getItem("syncronalUser");
+
+  let user = {};
+
+  try {
+    user = storedUser ? JSON.parse(storedUser) : {};
+  } catch (error) {
+    console.error("Failed to read user data:", error);
+    user = {};
+  }
+
+  const userName = user?.name || "Pradyuman Singh";
+
+  // Generate initials from user's name
+  const userInitials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  // ================= LOGOUT =================
+
+  const handleLogout = () => {
+    // Remove authentication data
+    localStorage.removeItem("syncronalToken");
+    localStorage.removeItem("syncronalUser");
+    localStorage.removeItem("syncronalLoggedIn");
+
+    // Remove temporary resume/analysis data
+    localStorage.removeItem("syncronalResumeText");
+    localStorage.removeItem("syncronalResumeAnalysis");
+    localStorage.removeItem("syncronalResumeFileName");
+    localStorage.removeItem("syncronalTargetJobRole");
+    localStorage.removeItem("syncronalTargetJobDescription");
+
+    // Close dropdown
+    setShowUserMenu(false);
+
+    // Redirect to login
+    navigate("/login", { replace: true });
+  };
+
+  // ================= DARK MODE =================
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => {
@@ -35,6 +86,7 @@ function Navbar() {
     <nav className="navbar">
 
       {/* ================= LEFT - BRAND ================= */}
+
       <div className="navbar-left">
 
         <Link to="/home" className="brand">
@@ -55,6 +107,7 @@ function Navbar() {
 
 
       {/* ================= CENTER - NAVIGATION ================= */}
+
       <div className="navbar-center">
 
         {/* Home */}
@@ -85,9 +138,11 @@ function Navbar() {
 
 
       {/* ================= RIGHT - USER ================= */}
+
       <div className="navbar-right">
 
         {/* Dark / Light Mode */}
+
         <button
           className="theme-toggle"
           onClick={toggleDarkMode}
@@ -102,19 +157,21 @@ function Navbar() {
 
 
         {/* User */}
+
         <div className="user-wrapper">
 
           <button
             className="user-profile"
-            onClick={() => setShowUserMenu(!showUserMenu)}
+            onClick={() => setShowUserMenu((prev) => !prev)}
+            type="button"
           >
 
             <div className="user-avatar">
-              PS
+              {userInitials}
             </div>
 
             <span className="user-name">
-              Pradyuman Singh
+              {userName}
             </span>
 
             <ChevronDown
@@ -127,26 +184,28 @@ function Navbar() {
           </button>
 
 
-          {/* User Dropdown */}
+          {/* ================= USER DROPDOWN ================= */}
+
           {showUserMenu && (
             <div className="user-dropdown">
 
-              <Link to="/profile">
+              <Link
+                to="/profile"
+                onClick={() => setShowUserMenu(false)}
+              >
                 My Profile
               </Link>
 
-              <Link to="/settings">
+              <Link
+                to="/settings"
+                onClick={() => setShowUserMenu(false)}
+              >
                 Settings
               </Link>
 
               <button
-                onClick={() => {
-                  localStorage.removeItem(
-                    "syncronalLoggedIn"
-                  );
-
-                  setShowUserMenu(false);
-                }}
+                type="button"
+                onClick={handleLogout}
               >
                 Logout
               </button>

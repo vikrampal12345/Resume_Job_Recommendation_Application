@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.services.auth_service import (
-    decode_access_token
+    create_access_token
 )
 
 from app.services.database import (

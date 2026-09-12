@@ -25,6 +25,9 @@ const Login = () => {
   });
 
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // ================= INPUT CHANGE =================
 
   const handleChange = (e) => {
     setFormData({
@@ -35,47 +38,81 @@ const Login = () => {
     setError("");
   };
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
+  // ================= LOGIN =================
 
-  const { email, password } = formData;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!email || !password) {
-    setError("Please enter your email and password.");
-    return;
-  }
+    setError("");
 
-  if (password.length < 8) {
-    setError("Password must contain at least 8 characters.");
-    return;
-  }
+    const { email, password } = formData;
 
-  /*
-    Frontend-only login demo.
-
-    Check whether a user was previously created
-    through the signup page.
-  */
-  const savedUser = localStorage.getItem("syncronalUser");
-
-  if (savedUser) {
-    const user = JSON.parse(savedUser);
-
-    if (user.email !== email) {
-      setError("No account found with this email.");
+    // Basic validation
+    if (!email || !password) {
+      setError("Please enter your email and password.");
       return;
     }
-  }
 
-  // Save login state
-  localStorage.setItem(
-    "syncronalLoggedIn",
-    "true"
-  );
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
 
-  // Redirect to Home page after successful login
-  navigate("/home");
-};
+    try {
+      setIsLoading(true);
+
+      // Send login request to FastAPI
+      const data = await apiRequest("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
+
+      console.log("Login response:", data);
+
+      // ================= SAVE JWT TOKEN =================
+
+      if (!data.token) {
+        throw new Error("Login successful but no authentication token was received.");
+      }
+
+      localStorage.setItem("syncronalToken", data.token);
+
+      // ================= SAVE USER =================
+
+      if (data.user) {
+        localStorage.setItem(
+          "syncronalUser",
+          JSON.stringify(data.user)
+        );
+      }
+
+      // ================= LOGIN STATE =================
+
+      localStorage.setItem("syncronalLoggedIn", "true");
+
+      // Clear any old analysis data
+      localStorage.removeItem("syncronalResumeAnalysis");
+      localStorage.removeItem("syncronalResumeText");
+      localStorage.removeItem("syncronalResumeFileName");
+
+      // ================= REDIRECT =================
+
+      navigate("/dashboard", { replace: true });
+
+    } catch (error) {
+      console.error("Login failed:", error);
+
+      setError(
+        error.message || "Invalid email or password. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="login-page">
 
@@ -85,6 +122,7 @@ const Login = () => {
         <div className="login-navbar-inner">
 
           {/* Logo */}
+
           <Link to="/" className="login-logo-wrapper">
 
             <div className="login-logo-icon">
@@ -97,8 +135,8 @@ const Login = () => {
 
           </Link>
 
-
           {/* Signup */}
+
           <div className="login-signup-wrapper">
 
             <span className="login-signup-text">
@@ -289,6 +327,8 @@ const Login = () => {
                       onChange={handleChange}
                       placeholder="you@example.com"
                       className="login-input"
+                      autoComplete="email"
+                      disabled={isLoading}
                     />
 
                   </div>
@@ -334,6 +374,8 @@ const Login = () => {
                       onChange={handleChange}
                       placeholder="Enter your password"
                       className="login-input login-password-input"
+                      autoComplete="current-password"
+                      disabled={isLoading}
                     />
 
 
@@ -341,10 +383,9 @@ const Login = () => {
                       type="button"
                       className="login-password-toggle"
                       onClick={() =>
-                        setShowPassword(
-                          !showPassword
-                        )
+                        setShowPassword(!showPassword)
                       }
+                      disabled={isLoading}
                     >
 
                       {showPassword ? (
@@ -368,6 +409,7 @@ const Login = () => {
 
                     <input
                       type="checkbox"
+                      disabled={isLoading}
                     />
 
                     <span>
@@ -384,13 +426,16 @@ const Login = () => {
                 <button
                   type="submit"
                   className="login-submit"
+                  disabled={isLoading}
                 >
 
                   <span>
-                    Log In
+                    {isLoading ? "Logging In..." : "Log In"}
                   </span>
 
-                  <ArrowRight size={18} />
+                  {!isLoading && (
+                    <ArrowRight size={18} />
+                  )}
 
                 </button>
 
