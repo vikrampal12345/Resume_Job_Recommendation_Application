@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://resume-job-recommendation-api-czbgfvegfhg7gkfb.centralindia-01.azurewebsites.net"
+  baseURL: "http://127.0.0.1:8000"
 });
 
 export default API;
