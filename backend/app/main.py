@@ -10,6 +10,7 @@ from app.job_formatter import format_job_name
 from app.requirement_extractor import extract_requirements
 from app.evidence_engine import analyze_job as analyze_job_evidence
 from app.decision_engine import decide_from_job_analysis
+from app.resume_relevance_filter import filter_resume_relevance
 
 import shutil
 import os
@@ -87,9 +88,105 @@ def home():
 # ============================================================
 
 @app.post("/predict")
-async def predict_resume(
-    file: UploadFile = File(...)
-):
+async def predict(file: UploadFile = File(...)):
+
+    allowed_extensions = [".pdf", ".docx"]
+
+    extension = os.path.splitext(file.filename)[1].lower()
+
+    if extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF and DOCX files are supported."
+        )
+
+    unique_filename = f"{uuid.uuid4()}{extension}"
+
+    file_path = os.path.join(
+        UPLOAD_DIR,
+        unique_filename
+    )
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    try:
+
+        # -----------------------------------------------
+        # STEP 1: Extract text
+        # -----------------------------------------------
+
+        resume_text = extract_resume_text(file_path)
+
+        # -----------------------------------------------
+        # STEP 2: Resume Relevance Filter
+        # -----------------------------------------------
+
+        validation = filter_resume_relevance(resume_text)
+
+        print("\n========== RESUME VALIDATION ==========")
+        print("Classification:", validation["classification"])
+        print("Score:", validation["score"])
+        print("Confidence:", validation["confidence"])
+        print("Document Type:", validation["document_type"])
+        print("Reason:", validation["reason"])
+        print("Continue:", validation["continue_pipeline"])
+        print("=======================================\n")
+
+        # -----------------------------------------------
+        # STEP 3: STOP if not a resume
+        # -----------------------------------------------
+
+        if not validation["continue_pipeline"]:
+
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "INVALID_RESUME",
+                    "message": (
+                        "The uploaded document does not appear "
+                        "to be a valid resume or CV. "
+                        "Please upload a resume."
+                    ),
+                    "classification": validation["classification"],
+                    "document_type": validation["document_type"],
+                    "confidence": validation["confidence"],
+                    "score": validation["score"],
+                    "reason": validation["reason"],
+                }
+            )
+
+        # -----------------------------------------------
+        # STEP 4: ONLY NOW run AI recommendation
+        # -----------------------------------------------
+
+        result = predictor.predict(resume_text)
+
+        return {
+            "success": True,
+            "validation": validation,
+            "recommendations": result.get(
+                "recommendations",
+                []
+            )
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+    finally:
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     temp_file = None
 

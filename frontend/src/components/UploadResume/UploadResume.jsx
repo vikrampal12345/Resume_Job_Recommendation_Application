@@ -112,7 +112,6 @@ function UploadResume() {
     // =========================================================
     // ANALYZE RESUME
     // =========================================================
-
     const analyzeResume = async () => {
         if (!selectedFile) {
             setError("Please upload a resume first.");
@@ -120,7 +119,14 @@ function UploadResume() {
         }
 
         try {
+            // Clear previous state before starting a new analysis
             setError("");
+            setRecommendations([]);
+            setResumeText("");
+            setLiveJobs([]);
+            setSelectedRole("");
+            setManualRole("");
+
             setLoading(true);
             setLoadingMessage("Analyzing Resume");
 
@@ -148,17 +154,28 @@ function UploadResume() {
                     "Resume analyzed successfully, but no job recommendations were found."
                 );
             }
+
         } catch (err) {
             console.error("Resume analysis error:", err);
 
+            // Make sure invalid upload cannot leave stale results on screen
+            setRecommendations([]);
+            setResumeText("");
+            setLiveJobs([]);
+            setSelectedRole("");
+            setManualRole("");
+
+            // uploadResume() now throws a normal Error with the backend message
             setError(
-                err?.response?.data?.detail ||
+                err?.message ||
                 "Unable to analyze the resume. Please try again."
             );
+
         } finally {
             setLoading(false);
         }
     };
+    
 
 
     // =========================================================

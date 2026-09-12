@@ -1,0 +1,20 @@
+*   [33m6408b2b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mvikram[m[33m, [m[1;31morigin/vikram[m[33m)[m Merge pradyuman into vikram
+[31m|[m[32m\[m  
+[31m|[m * [33m8fa2932[m[33m ([m[1;31morigin/pradyuman[m[33m)[m Update frontend
+[31m|[m * [33m6cc07e6[m Change frontend
+* [32m|[m [33m8800b97[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m fronted change
+[32m|[m[32m/[m  
+*   [33m98c0a23[m Merge pull request #3 from vikrampal12345/vikram
+[33m|[m[34m\[m  
+[33m|[m * [33m07a0c33[m final change
+[33m|[m[33m/[m  
+* [33me687c8f[m new feature
+* [33m07283e3[m Update api.js
+* [33m5d756b8[m Update main_resume-job-recommendation-api.yml
+* [33ma96ddb3[m Update main_resume-job-recommendation-api.yml
+* [33m02e8167[m Update api.js
+* [33m0d58475[m Update main_resume-job-recommendation-api.yml
+* [33m0461fdb[m Add or update the Azure App Service build and deployment workflow config
+* [33mf67f2e0[m Add application link to README
+[34m|[m * [33m687b7ab[m[33m ([m[1;31morigin/vercel/install-and-configure-vercel-w-6ate3b[m[33m)[m Install and Configure Vercel Web Analytics
+[34m|[m[34m/[m  
