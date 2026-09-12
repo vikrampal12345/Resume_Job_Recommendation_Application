@@ -56,3 +56,8 @@ node_modules
 /src/
 /package.json
 /package-lock.json
+
+
+# New update
+
+.env
