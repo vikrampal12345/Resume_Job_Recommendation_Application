@@ -1,0 +1,633 @@
+/* =========================================
+   SYNCRONAL - PROFILE PAGE
+   ========================================= */
+
+.profile-page {
+  min-height: 100vh;
+  background: #f7f9fc;
+  color: #172033;
+}
+
+.profile-container {
+  width: min(1150px, 92%);
+  margin: auto;
+  padding: 42px 0 70px;
+}
+
+/* =========================================
+   PAGE HEADER
+   ========================================= */
+
+.profile-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 30px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.profile-page-header h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  letter-spacing: -0.7px;
+}
+
+.profile-page-header p {
+  margin: 0;
+  color: #778195;
+  font-size: 14px;
+}
+
+.edit-profile-btn {
+  min-height: 43px;
+  padding: 0 17px;
+  border: 1px solid #dce1eb;
+  border-radius: 10px;
+  background: white;
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  transition: 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+  border-color: #4f46e5;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   PROFILE CARD
+   ========================================= */
+
+.profile-card {
+  overflow: hidden;
+  background: white;
+  border: 1px solid #e5e9f0;
+  border-radius: 19px;
+  box-shadow: 0 8px 28px rgba(30, 40, 70, 0.05);
+  margin-bottom: 20px;
+}
+
+.profile-cover {
+  height: 115px;
+  background: linear-gradient(
+    135deg,
+    #4f46e5,
+    #6d28d9
+  );
+}
+
+.profile-main {
+  min-height: 105px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 27px 22px;
+  position: relative;
+}
+
+.profile-avatar {
+  width: 82px;
+  height: 82px;
+  margin-top: -40px;
+  border-radius: 50%;
+  background: white;
+  border: 5px solid white;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #4f46e5;
+  background-color: #eef2ff;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.profile-main-info {
+  padding-top: 17px;
+}
+
+.profile-main-info h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.profile-main-info p {
+  margin: 0 0 9px;
+  color: #697386;
+  font-size: 13px;
+}
+
+.profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.profile-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #8992a2;
+  font-size: 12px;
+}
+
+.profile-status {
+  margin-left: auto;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #ecfdf5;
+  color: #16835a;
+  font-size: 12px;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* =========================================
+   PROFILE SECTION
+   ========================================= */
+
+.profile-section {
+  background: white;
+  border: 1px solid #e5e9f0;
+  border-radius: 17px;
+  padding: 27px;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 22px rgba(30, 40, 70, 0.04);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-heading-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.section-heading h2 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #8a93a3;
+  font-size: 12px;
+}
+
+/* =========================================
+   FORM
+   ========================================= */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  color: #4c5668;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input-box {
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  border: 1px solid #dce1e9;
+  border-radius: 10px;
+
+  color: #8c95a5;
+  background: white;
+}
+
+.input-box:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.07);
+}
+
+.input-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #20283a;
+  font-size: 13px;
+}
+
+.input-box input:disabled {
+  color: #687386;
+  cursor: default;
+}
+
+.form-group select {
+  height: 48px;
+  padding: 0 13px;
+  border: 1px solid #dce1e9;
+  border-radius: 10px;
+  background: white;
+  color: #687386;
+  outline: none;
+  font-size: 13px;
+}
+
+.form-group textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 13px;
+  border: 1px solid #dce1e9;
+  border-radius: 10px;
+  outline: none;
+  font-family: inherit;
+  color: #20283a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.form-group textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.07);
+}
+
+.form-group textarea:disabled {
+  background: #fafbfc;
+  color: #687386;
+}
+
+/* =========================================
+   SKILLS
+   ========================================= */
+
+.skills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 12px;
+  border-radius: 9px;
+
+  background: #eef2ff;
+  color: #4f46e5;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.skill-tag button {
+  width: 17px;
+  height: 17px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #4f46e5;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skill-tag button:hover {
+  background: #dfe4ff;
+}
+
+.add-skill {
+  display: flex;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.add-skill input {
+  flex: 1;
+  height: 42px;
+  padding: 0 13px;
+
+  border: 1px solid #dce1e9;
+  border-radius: 9px;
+  outline: none;
+
+  font-size: 13px;
+}
+
+.add-skill input:focus {
+  border-color: #4f46e5;
+}
+
+.add-skill button {
+  border: none;
+  border-radius: 9px;
+  padding: 0 15px;
+
+  background: #4f46e5;
+  color: white;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* =========================================
+   RESUME
+   ========================================= */
+
+.resume-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding: 17px;
+
+  border: 1px solid #e1e5ec;
+  border-radius: 12px;
+  background: #fafbfe;
+}
+
+.resume-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.resume-info {
+  flex: 1;
+}
+
+.resume-info h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.resume-info p {
+  margin: 0;
+  color: #8992a2;
+  font-size: 11px;
+}
+
+.view-resume-btn {
+  min-height: 38px;
+  padding: 0 13px;
+
+  border: 1px solid #dce1e9;
+  border-radius: 8px;
+
+  background: white;
+  color: #4f46e5;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+/* =========================================
+   SAVE
+   ========================================= */
+
+.save-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+.save-profile-btn {
+  min-height: 48px;
+  padding: 0 22px;
+
+  border: none;
+  border-radius: 11px;
+
+  background: linear-gradient(
+    135deg,
+    #4f46e5,
+    #6d28d9
+  );
+
+  color: white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  box-shadow: 0 9px 22px rgba(79, 70, 229, 0.22);
+
+  transition: 0.2s ease;
+}
+
+.save-profile-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* =========================================
+   DARK MODE
+   ========================================= */
+
+body.dark-mode .profile-page {
+  background: #0f1117;
+  color: #f2f4f8;
+}
+
+body.dark-mode .profile-card,
+body.dark-mode .profile-section {
+  background: #171a22;
+  border-color: #292e3a;
+}
+
+body.dark-mode .profile-page-header h1,
+body.dark-mode .section-heading h2,
+body.dark-mode .profile-main-info h2,
+body.dark-mode .resume-info h3 {
+  color: #f2f4f8;
+}
+
+body.dark-mode .profile-page-header p,
+body.dark-mode .section-heading p,
+body.dark-mode .profile-main-info p,
+body.dark-mode .profile-meta span,
+body.dark-mode .resume-info p {
+  color: #9da5b5;
+}
+
+body.dark-mode .edit-profile-btn,
+body.dark-mode .view-resume-btn {
+  background: #171a22;
+  border-color: #353b49;
+}
+
+body.dark-mode .input-box,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea,
+body.dark-mode .add-skill input {
+  background: #12151c;
+  border-color: #353b49;
+  color: #f2f4f8;
+}
+
+body.dark-mode .input-box input {
+  color: #f2f4f8;
+}
+
+body.dark-mode .form-group label {
+  color: #c0c6d1;
+}
+
+body.dark-mode .resume-card {
+  background: #12151c;
+  border-color: #353b49;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 750px) {
+  .profile-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .profile-main {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-bottom: 25px;
+  }
+
+  .profile-main-info {
+    padding-top: 0;
+  }
+
+  .profile-status {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .profile-container {
+    width: 94%;
+    padding-top: 28px;
+  }
+
+  .profile-page-header h1 {
+    font-size: 28px;
+  }
+
+  .profile-section {
+    padding: 20px;
+  }
+
+  .profile-main {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .profile-meta {
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .resume-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .resume-info {
+    min-width: calc(100% - 65px);
+  }
+
+  .view-resume-btn {
+    width: 100%;
+  }
+
+  .add-skill {
+    flex-direction: column;
+  }
+
+  .add-skill button {
+    min-height: 42px;
+    justify-content: center;
+  }
+}

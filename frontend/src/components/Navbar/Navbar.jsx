@@ -1,37 +1,165 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Home,
+  FileSearch,
+  LayoutDashboard,
+  CircleHelp,
+  Sun,
+  Moon,
+  ChevronDown,
+} from "lucide-react";
+
 import "./Navbar.css";
 import logo from "../../assets/syncronal-logo.png";
+
 function Navbar() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-    return (
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const newMode = !prev;
 
-        <nav className="navbar">
+      if (newMode) {
+        document.body.classList.add("dark-mode");
+      } else {
+        document.body.classList.remove("dark-mode");
+      }
 
-            <div className="logo">
+      return newMode;
+    });
+  };
 
-                <div className="brand">
+  return (
+    <nav className="navbar">
 
-                    <img
-                        src={logo}
-                        alt="Syncronal"
-                        className="brand-logo"
-                    />
+      {/* ================= LEFT - BRAND ================= */}
+      <div className="navbar-left">
 
-                    <h2>AI Resume Analyzer</h2>
+        <Link to="/home" className="brand">
 
-                </div>
+          <img
+            src={logo}
+            alt="Syncronal"
+            className="brand-logo"
+          />
 
+          <div className="brand-text">
+            <h2>AI Powered Career Recommendation</h2>
+          </div>
+
+        </Link>
+
+      </div>
+
+
+      {/* ================= CENTER - NAVIGATION ================= */}
+      <div className="navbar-center">
+
+        {/* Home */}
+        <Link to="/home" className="nav-link active">
+          <Home size={18} />
+          <span>Home</span>
+        </Link>
+
+        {/* Analyze */}
+        <Link to="/analyze" className="nav-link">
+          <FileSearch size={18} />
+          <span>Analyze</span>
+        </Link>
+
+        {/* Dashboard */}
+        <Link to="/dashboard" className="nav-link">
+          <LayoutDashboard size={18} />
+          <span>Dashboard</span>
+        </Link>
+
+        {/* How It Works */}
+        <Link to="/how-it-works" className="nav-link">
+          <CircleHelp size={18} />
+          <span>How It Works</span>
+        </Link>
+
+      </div>
+
+
+      {/* ================= RIGHT - USER ================= */}
+      <div className="navbar-right">
+
+        {/* Dark / Light Mode */}
+        <button
+          className="theme-toggle"
+          onClick={toggleDarkMode}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? (
+            <Sun size={20} />
+          ) : (
+            <Moon size={20} />
+          )}
+        </button>
+
+
+        {/* User */}
+        <div className="user-wrapper">
+
+          <button
+            className="user-profile"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+          >
+
+            <div className="user-avatar">
+              PS
             </div>
 
-            <div className="tagline">
+            <span className="user-name">
+              Pradyuman Singh
+            </span>
 
-                AI Powered Career Recommendation
+            <ChevronDown
+              size={18}
+              className={`user-arrow ${
+                showUserMenu ? "rotate" : ""
+              }`}
+            />
+
+          </button>
+
+
+          {/* User Dropdown */}
+          {showUserMenu && (
+            <div className="user-dropdown">
+
+              <Link to="/profile">
+                My Profile
+              </Link>
+
+              <Link to="/settings">
+                Settings
+              </Link>
+
+              <button
+                onClick={() => {
+                  localStorage.removeItem(
+                    "syncronalLoggedIn"
+                  );
+
+                  setShowUserMenu(false);
+                }}
+              >
+                Logout
+              </button>
 
             </div>
+          )}
 
-        </nav>
+        </div>
 
-    );
+      </div>
 
+    </nav>
+  );
 }
 
 export default Navbar;
