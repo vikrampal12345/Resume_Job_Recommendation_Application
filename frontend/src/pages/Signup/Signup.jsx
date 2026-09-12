@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiRequest } from "../../services/api";
 import "./Signup.css";
 
 import {
@@ -38,11 +39,14 @@ const Signup = () => {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const { name, email, password, confirmPassword } = formData;
 
+    setError("");
+
+    // Validation
     if (!name || !email || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
@@ -58,14 +62,53 @@ const Signup = () => {
       return;
     }
 
-    const user = {
-      name,
-      email,
-    };
+    try {
+      // Send data to FastAPI
+      const data = await apiRequest("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          confirmPassword,
+        }),
+      });
 
-    localStorage.setItem("syncronalUser", JSON.stringify(user));
+      console.log("Signup successful:", data);
 
-    navigate("/dashboard");
+      // Store JWT token
+      if (data.token) {
+        localStorage.setItem("syncronalToken", data.token);
+      }
+
+      // Store user information
+      if (data.user) {
+        localStorage.setItem(
+          "syncronalUser",
+          JSON.stringify(data.user)
+        );
+      } else {
+        localStorage.setItem(
+          "syncronalUser",
+          JSON.stringify({
+            name,
+            email,
+          })
+        );
+      }
+
+      localStorage.setItem("syncronalLoggedIn", "true");
+
+      // Redirect
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Signup failed:", error);
+
+      setError(
+        error.message || "Signup failed. Please try again."
+      );
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -21,9 +21,140 @@ import {
 } from "lucide-react";
 
 import Navbar from "../../components/Navbar/Navbar";
+import { apiRequest } from "../../services/api";
 import "./UserDashboard.css";
 
 function Dashboard() {
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const savedUser = localStorage.getItem("syncronalUser");
+  const user = savedUser ? JSON.parse(savedUser) : null;
+  const userName = user?.name || "Pradyuman";
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await apiRequest("/dashboard/");
+
+        console.log("Dashboard data:", data);
+        setDashboard(data);
+      } catch (error) {
+        console.error("Dashboard error:", error);
+        setError(error.message || "Unable to load dashboard.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  // Backend field names can vary, so keep the existing UI values as
+  // fallbacks until the exact /dashboard/ response is finalized.
+  const resumeScore =
+    dashboard?.resume_score ??
+    dashboard?.resumeScore ??
+    dashboard?.latest_resume?.score ??
+    85;
+
+  const jobsMatched =
+    dashboard?.jobs_matched ??
+    dashboard?.jobsMatched ??
+    dashboard?.matched_jobs ??
+    24;
+
+  const applications =
+    dashboard?.applications ??
+    dashboard?.application_count ??
+    dashboard?.applications_count ??
+    12;
+
+  const savedJobs =
+    dashboard?.saved_jobs ??
+    dashboard?.savedJobs ??
+    dashboard?.saved_jobs_count ??
+    8;
+
+  const atsScore =
+    dashboard?.ats_score ??
+    dashboard?.atsScore ??
+    dashboard?.latest_resume?.ats_score ??
+    91;
+
+  const skillsDetected =
+    dashboard?.skills_detected ??
+    dashboard?.skillsDetected ??
+    dashboard?.latest_resume?.skills_detected ??
+    18;
+
+  const skillGaps =
+    dashboard?.skill_gaps ??
+    dashboard?.skillGaps ??
+    dashboard?.latest_resume?.skill_gaps ??
+    4;
+
+  const applicationStats = dashboard?.application_stats || {};
+
+  const appliedCount =
+    applicationStats.applied ??
+    dashboard?.applied_count ??
+    12;
+
+  const interviewCount =
+    applicationStats.interview ??
+    applicationStats.interviews ??
+    dashboard?.interview_count ??
+    3;
+
+  const reviewCount =
+    applicationStats.review ??
+    applicationStats.under_review ??
+    dashboard?.review_count ??
+    5;
+
+  const rejectedCount =
+    applicationStats.rejected ??
+    dashboard?.rejected_count ??
+    4;
+
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <Navbar />
+        <main className="dashboard-main">
+
+         {error && (
+           <div
+             role="alert"
+             style={{
+               marginBottom: "16px",
+               padding: "12px 16px",
+               borderRadius: "10px",
+               background: "rgba(239, 68, 68, 0.08)",
+               border: "1px solid rgba(239, 68, 68, 0.2)",
+               color: "#b91c1c",
+             }}
+           >
+             {error}
+           </div>
+         )}
+          <section className="dashboard-header">
+            <div>
+              <span className="dashboard-label">CAREER DASHBOARD</span>
+              <h1>Loading your dashboard...</h1>
+              <p>Fetching your latest career data.</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-page">
 
@@ -44,7 +175,7 @@ function Dashboard() {
             </span>
 
             <h1>
-              Welcome back, Pradyuman! 👋
+              Welcome back, {userName}! 👋
             </h1>
 
             <p>
@@ -227,7 +358,7 @@ function Dashboard() {
 
                 <div className="score-inner">
 
-                  <strong>85</strong>
+                  <strong>{resumeScore}</strong>
 
                   <span>%</span>
 
@@ -246,13 +377,13 @@ function Dashboard() {
 
                   <div className="metric-info">
                     <span>ATS Compatibility</span>
-                    <strong>91%</strong>
+                    <strong>{atsScore}%</strong>
                   </div>
 
                   <div className="metric-bar">
                     <div
                       className="metric-fill blue-fill"
-                      style={{ width: "91%" }}
+                      style={{ width: `${Math.min(Number(atsScore) || 0, 100)}%` }}
                     ></div>
                   </div>
 
@@ -263,7 +394,7 @@ function Dashboard() {
 
                   <div className="metric-info">
                     <span>Skills Detected</span>
-                    <strong>18</strong>
+                    <strong>{skillsDetected}</strong>
                   </div>
 
                   <div className="metric-bar">
@@ -297,7 +428,7 @@ function Dashboard() {
 
                   <div className="metric-info">
                     <span>Skill Gaps</span>
-                    <strong>4</strong>
+                    <strong>{skillGaps}</strong>
                   </div>
 
                   <div className="metric-bar">

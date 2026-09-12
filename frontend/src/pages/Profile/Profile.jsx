@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   UserRound,
   Mail,
@@ -15,30 +15,28 @@ import {
 } from "lucide-react";
 
 import Navbar from "../../components/Navbar/Navbar";
+import { apiRequest } from "../../services/api";
 import "./Profile.css";
 
 function Profile() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [profile, setProfile] = useState({
-    name: "Pradyuman Singh",
-    email: "pradyuman@example.com",
-    phone: "+91 98765 43210",
-    location: "Greater Noida, India",
-    role: "Frontend Developer",
-    education: "B.Tech Computer Science",
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    role: "",
+    education: "",
     experience: "Fresher",
-    bio: "Passionate developer interested in building modern web applications and AI-powered solutions.",
+    bio: "",
   });
 
-  const [skills, setSkills] = useState([
-    "React",
-    "JavaScript",
-    "HTML",
-    "CSS",
-    "Node.js",
-    "Git",
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const [skills, setSkills] = useState([]);
 
   const [newSkill, setNewSkill] = useState("");
 
@@ -69,23 +67,145 @@ function Profile() {
     );
   };
 
-  const handleSave = () => {
-    localStorage.setItem(
-      "syncronalProfile",
-      JSON.stringify({
-        ...profile,
-        skills,
-      })
-    );
+  const handleSave = async () => {
+    setError("");
+    setSaveMessage("");
 
-    setIsEditing(false);
+    try {
+      const data = await apiRequest("/profile/", {
+        method: "PUT",
+        body: JSON.stringify({
+          ...profile,
+          skills,
+        }),
+      });
+
+      // Support either { profile: {...} } or a direct profile response.
+      const updatedProfile = data?.profile || data;
+
+      if (updatedProfile && typeof updatedProfile === "object") {
+        setProfile((prev) => ({
+          ...prev,
+          ...updatedProfile,
+        }));
+
+        if (Array.isArray(updatedProfile.skills)) {
+          setSkills(updatedProfile.skills);
+        }
+      }
+
+      // Keep local storage as a convenience/cache, but backend is the source of truth.
+      localStorage.setItem(
+        "syncronalProfile",
+        JSON.stringify({
+          ...(updatedProfile || profile),
+          skills: updatedProfile?.skills || skills,
+        })
+      );
+
+      // Keep the navbar/user-facing local user data in sync.
+      const savedUser = localStorage.getItem("syncronalUser");
+      const currentUser = savedUser ? JSON.parse(savedUser) : {};
+
+      localStorage.setItem(
+        "syncronalUser",
+        JSON.stringify({
+          ...currentUser,
+          name: updatedProfile?.name || profile.name,
+          email: updatedProfile?.email || profile.email,
+        })
+      );
+
+      setIsEditing(false);
+      setSaveMessage("Profile updated successfully.");
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      setError(error.message || "Unable to update your profile.");
+    }
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await apiRequest("/profile/");
+
+        console.log("Profile data:", data);
+
+        // Support either { profile: {...} } or a direct profile response.
+        const profileData = data?.profile || data;
+
+        if (profileData && typeof profileData === "object") {
+          setProfile((prev) => ({
+            ...prev,
+            ...profileData,
+          }));
+
+          if (Array.isArray(profileData.skills)) {
+            setSkills(profileData.skills);
+          }
+        }
+      } catch (error) {
+        console.error("Profile load failed:", error);
+        setError(error.message || "Unable to load your profile.");
+
+        // If backend is temporarily unavailable, restore locally cached profile.
+        try {
+          const cached = localStorage.getItem("syncronalProfile");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            setProfile((prev) => ({ ...prev, ...parsed }));
+            if (Array.isArray(parsed.skills)) {
+              setSkills(parsed.skills);
+            }
+          } else {
+            const savedUser = localStorage.getItem("syncronalUser");
+            if (savedUser) {
+              const user = JSON.parse(savedUser);
+              setProfile((prev) => ({
+                ...prev,
+                name: user?.name || prev.name,
+                email: user?.email || prev.email,
+              }));
+            }
+          }
+        } catch (cacheError) {
+          console.error("Profile cache read failed:", cacheError);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
 
   return (
     <div className="profile-page">
       <Navbar />
 
       <main className="profile-container">
+
+        {loading && (
+          <div className="profile-message" role="status">
+            Loading your profile...
+          </div>
+        )}
+
+        {error && (
+          <div className="profile-message profile-message-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        {saveMessage && (
+          <div className="profile-message profile-message-success" role="status">
+            {saveMessage}
+          </div>
+        )}
 
         {/* PAGE HEADER */}
         <section className="profile-page-header">
@@ -121,7 +241,13 @@ function Profile() {
           <div className="profile-main">
 
             <div className="profile-avatar">
-              PS
+              {(profile.name || "User")
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join("")
+                .toUpperCase()}
             </div>
 
             <div className="profile-main-info">
