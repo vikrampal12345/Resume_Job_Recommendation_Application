@@ -57,6 +57,8 @@ node_modules
 /package.json
 /package-lock.json
 
+# =========================
+# Local / Temporary Files
+# =========================
 Data_extraction_and_label_job_locally_in_my_machine
-
 backend.zip

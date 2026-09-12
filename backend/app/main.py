@@ -1,3 +1,18 @@
+# Expand backend
+
+from app.routes.auth import router as auth_router
+from app.routes.profile import router as profile_router
+from app.routes.dashboard import router as dashboard_router
+from app.routes.applications import router as applications_router
+from app.routes.saved_jobs import router as saved_jobs_router
+from app.routes.resumes import router as resumes_router
+
+from app.services.database import (
+    init_db
+)
+
+# Till here
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -28,6 +43,21 @@ app = FastAPI(
     version="2.0.0"
 )
 
+# ============================================================
+# DATABASE
+# ============================================================
+
+try:
+    init_db()
+
+    print("[DATABASE] MongoDB connected successfully.")
+
+except Exception as database_error:
+
+    print(
+        "[DATABASE ERROR]",
+        database_error
+    )
 
 # ============================================================
 # CORS
@@ -44,6 +74,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ============================================================
+# NEW USER FEATURES
+# ============================================================
+
+app.include_router(
+    auth_router
+)
+
+app.include_router(
+    profile_router
+)
+
+app.include_router(
+    dashboard_router
+)
+
+app.include_router(
+    applications_router
+)
+
+app.include_router(
+    saved_jobs_router
+)
+
+app.include_router(
+    resumes_router
+)
 
 # ============================================================
 # INITIALIZE RESUME PREDICTOR
