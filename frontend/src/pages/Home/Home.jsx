@@ -17,8 +17,40 @@ import {
 
 import Navbar from "../../components/Navbar/Navbar";
 import "./Home.css";
+import { useEffect } from "react";
 
 function Home() {
+  const handleHowItWorks = () => {
+    // Agar Home page par nahi hain
+    if (window.location.pathname !== "/home") {
+      navigate("/home");
+
+      // Home page render hone ke baad scroll
+      setTimeout(() => {
+        const section = document.getElementById("how-it-works");
+
+        if (section) {
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 300);
+
+      return;
+    }
+
+    // Agar already Home page par hain
+    const section = document.getElementById("how-it-works");
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   return (
     <div className="home-page">
 
@@ -357,7 +389,7 @@ function Home() {
 
         {/* ================= HOW IT WORKS ================= */}
 
-        <section className="how-section">
+        <section id="how-it-works" className="how-section">
 
           <div className="section-heading centered">
 
@@ -588,10 +620,19 @@ function Home() {
         </p>
 
         <div className="footer-links">
-          <Link to="/how-it-works">
-            How It Works
-          </Link>
+          <a
+            href="#how-it-works"
+            onClick={(e) => {
+              e.preventDefault();
 
+              document.getElementById("how-it-works")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
+          >
+            How It Works
+          </a>
           <Link to="/privacy">
             Privacy
           </Link>

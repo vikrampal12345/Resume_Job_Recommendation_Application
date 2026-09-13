@@ -34,15 +34,44 @@ function Navbar() {
   }
 
   const userName = user?.name || "Pradyuman Singh";
-
-  // Generate initials from user's name
-  const userInitials = userName
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
+  // Show only first letter of user's name
+  const userInitial = userName
+    .trim()
+    .charAt(0)
     .toUpperCase();
+
+  // ================= HOW IT WORKS =================
+
+  const handleHowItWorks = () => {
+    // If user is not on Home page
+    if (window.location.pathname !== "/home") {
+      navigate("/home");
+
+      // Wait for Home page to render
+      setTimeout(() => {
+        const section = document.getElementById("how-it-works");
+
+        if (section) {
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 300);
+
+      return;
+    }
+
+    // If already on Home page
+    const section = document.getElementById("how-it-works");
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   // ================= LOGOUT =================
 
@@ -58,6 +87,10 @@ function Navbar() {
     localStorage.removeItem("syncronalResumeFileName");
     localStorage.removeItem("syncronalTargetJobRole");
     localStorage.removeItem("syncronalTargetJobDescription");
+
+    // IMPORTANT:
+    // Do NOT remove syncronalProfile
+    // because profile details should remain saved.
 
     // Close dropdown
     setShowUserMenu(false);
@@ -111,25 +144,50 @@ function Navbar() {
       <div className="navbar-center">
 
         {/* Home */}
+
         <Link to="/home" className="nav-link active">
           <Home size={18} />
           <span>Home</span>
         </Link>
 
+
         {/* Analyze */}
+
         <Link to="/analyze" className="nav-link">
           <FileSearch size={18} />
           <span>Analyze</span>
         </Link>
 
+
         {/* Dashboard */}
+
         <Link to="/dashboard" className="nav-link">
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </Link>
 
+
         {/* How It Works */}
-        <Link to="/how-it-works" className="nav-link">
+        <Link
+          to="/home#how-it-works"
+          className="nav-link"
+          onClick={(e) => {
+            // If already on Home page, prevent navigation
+            // and scroll directly to the section
+            if (window.location.pathname === "/home") {
+              e.preventDefault();
+
+              const section = document.getElementById("how-it-works");
+
+              if (section) {
+                section.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }
+            }
+          }}
+        >
           <CircleHelp size={18} />
           <span>How It Works</span>
         </Link>
@@ -147,6 +205,7 @@ function Navbar() {
           className="theme-toggle"
           onClick={toggleDarkMode}
           aria-label="Toggle dark mode"
+          type="button"
         >
           {darkMode ? (
             <Sun size={20} />
@@ -162,13 +221,19 @@ function Navbar() {
 
           <button
             className="user-profile"
-            onClick={() => setShowUserMenu((prev) => !prev)}
+            onClick={() =>
+              setShowUserMenu((prev) => !prev)
+            }
             type="button"
           >
 
+            {/* First letter only */}
+
             <div className="user-avatar">
-              {userInitials}
+              {userInitial}
             </div>
+
+            {/* User name */}
 
             <span className="user-name">
               {userName}
@@ -176,9 +241,8 @@ function Navbar() {
 
             <ChevronDown
               size={18}
-              className={`user-arrow ${
-                showUserMenu ? "rotate" : ""
-              }`}
+              className={`user-arrow ${showUserMenu ? "rotate" : ""
+                }`}
             />
 
           </button>
@@ -187,21 +251,28 @@ function Navbar() {
           {/* ================= USER DROPDOWN ================= */}
 
           {showUserMenu && (
+
             <div className="user-dropdown">
 
               <Link
                 to="/profile"
-                onClick={() => setShowUserMenu(false)}
+                onClick={() =>
+                  setShowUserMenu(false)
+                }
               >
                 My Profile
               </Link>
 
+
               <Link
                 to="/settings"
-                onClick={() => setShowUserMenu(false)}
+                onClick={() =>
+                  setShowUserMenu(false)
+                }
               >
                 Settings
               </Link>
+
 
               <button
                 type="button"
@@ -211,6 +282,7 @@ function Navbar() {
               </button>
 
             </div>
+
           )}
 
         </div>

@@ -91,8 +91,10 @@ const Login = () => {
 
       // ================= LOGIN STATE =================
 
-      localStorage.setItem("syncronalLoggedIn", "true");
-
+      localStorage.setItem(
+  "syncronalUser",
+  JSON.stringify(data.user)
+);
       // Clear any old analysis data
       localStorage.removeItem("syncronalResumeAnalysis");
       localStorage.removeItem("syncronalResumeText");

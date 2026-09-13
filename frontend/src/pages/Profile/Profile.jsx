@@ -72,16 +72,28 @@ function Profile() {
     setSaveMessage("");
 
     try {
+      setLoading(true);
+
       const data = await apiRequest("/profile/", {
         method: "PUT",
         body: JSON.stringify({
-          ...profile,
-          skills,
+          name: profile.name,
+          phone: profile.phone,
+          location: profile.location,
+          role: profile.role,
+          education: profile.education,
+          experience: profile.experience,
+          bio: profile.bio,
+          skills: skills,
         }),
       });
 
-      // Support either { profile: {...} } or a direct profile response.
-      const updatedProfile = data?.profile || data;
+      console.log("Profile update response:", data);
+
+      const updatedProfile =
+        data?.user ||
+        data?.profile ||
+        data;
 
       if (updatedProfile && typeof updatedProfile === "object") {
         setProfile((prev) => ({
@@ -92,35 +104,68 @@ function Profile() {
         if (Array.isArray(updatedProfile.skills)) {
           setSkills(updatedProfile.skills);
         }
+
+        // Cache locally as well
+        localStorage.setItem(
+          "syncronalProfile",
+          JSON.stringify({
+            ...updatedProfile,
+            skills: Array.isArray(updatedProfile.skills)
+              ? updatedProfile.skills
+              : skills,
+          })
+        );
+
+        // Update navbar user data
+        const savedUser =
+          localStorage.getItem("syncronalUser");
+
+        let currentUser = {};
+
+        try {
+          currentUser = savedUser
+            ? JSON.parse(savedUser)
+            : {};
+        } catch {
+          currentUser = {};
+        }
+
+        localStorage.setItem(
+          "syncronalUser",
+          JSON.stringify({
+            ...currentUser,
+            name:
+              updatedProfile.name ||
+              profile.name ||
+              currentUser.name ||
+              "",
+            email:
+              updatedProfile.email ||
+              profile.email ||
+              currentUser.email ||
+              "",
+          })
+        );
       }
 
-      // Keep local storage as a convenience/cache, but backend is the source of truth.
-      localStorage.setItem(
-        "syncronalProfile",
-        JSON.stringify({
-          ...(updatedProfile || profile),
-          skills: updatedProfile?.skills || skills,
-        })
-      );
-
-      // Keep the navbar/user-facing local user data in sync.
-      const savedUser = localStorage.getItem("syncronalUser");
-      const currentUser = savedUser ? JSON.parse(savedUser) : {};
-
-      localStorage.setItem(
-        "syncronalUser",
-        JSON.stringify({
-          ...currentUser,
-          name: updatedProfile?.name || profile.name,
-          email: updatedProfile?.email || profile.email,
-        })
-      );
-
       setIsEditing(false);
-      setSaveMessage("Profile updated successfully.");
+      setSaveMessage(
+        "Profile updated successfully."
+      );
+
     } catch (error) {
-      console.error("Profile update failed:", error);
-      setError(error.message || "Unable to update your profile.");
+      console.error(
+        "Profile update failed:",
+        error
+      );
+
+      setError(
+        error.message ||
+        "Unable to update your profile."
+      );
+
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,11 +175,31 @@ function Profile() {
         setLoading(true);
         setError("");
 
+        // 1. Load locally saved profile immediately
+        const cached = localStorage.getItem("syncronalProfile");
+
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+
+            setProfile((prev) => ({
+              ...prev,
+              ...parsed,
+            }));
+
+            if (Array.isArray(parsed.skills)) {
+              setSkills(parsed.skills);
+            }
+          } catch (cacheError) {
+            console.error("Failed to read cached profile:", cacheError);
+          }
+        }
+
+        // 2. Load permanent profile from backend
         const data = await apiRequest("/profile/");
 
-        console.log("Profile data:", data);
+        console.log("Profile data from backend:", data);
 
-        // Support either { profile: {...} } or a direct profile response.
         const profileData = data?.profile || data;
 
         if (profileData && typeof profileData === "object") {
@@ -146,34 +211,64 @@ function Profile() {
           if (Array.isArray(profileData.skills)) {
             setSkills(profileData.skills);
           }
+
+          // 3. Keep localStorage synchronized with backend
+          localStorage.setItem(
+            "syncronalProfile",
+            JSON.stringify({
+              ...profileData,
+              skills: Array.isArray(profileData.skills)
+                ? profileData.skills
+                : [],
+            })
+          );
+
+          // 4. Keep Navbar user data synchronized
+          const savedUser = localStorage.getItem("syncronalUser");
+
+          let currentUser = {};
+
+          try {
+            currentUser = savedUser ? JSON.parse(savedUser) : {};
+          } catch {
+            currentUser = {};
+          }
+
+          localStorage.setItem(
+            "syncronalUser",
+            JSON.stringify({
+              ...currentUser,
+              name: profileData.name || currentUser.name || "",
+              email: profileData.email || currentUser.email || "",
+            })
+          );
         }
       } catch (error) {
         console.error("Profile load failed:", error);
-        setError(error.message || "Unable to load your profile.");
 
-        // If backend is temporarily unavailable, restore locally cached profile.
+        // Backend unavailable → use cached profile
         try {
           const cached = localStorage.getItem("syncronalProfile");
+
           if (cached) {
             const parsed = JSON.parse(cached);
-            setProfile((prev) => ({ ...prev, ...parsed }));
+
+            setProfile((prev) => ({
+              ...prev,
+              ...parsed,
+            }));
+
             if (Array.isArray(parsed.skills)) {
               setSkills(parsed.skills);
-            }
-          } else {
-            const savedUser = localStorage.getItem("syncronalUser");
-            if (savedUser) {
-              const user = JSON.parse(savedUser);
-              setProfile((prev) => ({
-                ...prev,
-                name: user?.name || prev.name,
-                email: user?.email || prev.email,
-              }));
             }
           }
         } catch (cacheError) {
           console.error("Profile cache read failed:", cacheError);
         }
+
+        setError(
+          error.message || "Unable to load your profile."
+        );
       } finally {
         setLoading(false);
       }
@@ -541,11 +636,14 @@ function Profile() {
           <div className="save-container">
 
             <button
+              type="button"
               className="save-profile-btn"
               onClick={handleSave}
+              disabled={loading}
             >
               <Save size={18} />
-              Save Changes
+
+              {loading ? "Saving..." : "Save Changes"}
             </button>
 
           </div>
